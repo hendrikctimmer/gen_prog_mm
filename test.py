@@ -1,2 +1,3 @@
-l1 = [1,2,3,4]
-print(sum(l1))
+import random
+
+print(random.choice(["a","b"]))
