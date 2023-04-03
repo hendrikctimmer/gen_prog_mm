@@ -1,3 +1,3 @@
-import random
+a = "1"
 
-print(random.choice(["a","b"]))
+print(type(int(1)))
