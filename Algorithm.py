@@ -20,24 +20,25 @@ class Algorithm:
 
 			current_h = "h" + str(x+1)
 
-			h_int = self.mult_algo[current_h]
+			if current_h in self.mult_algo.keys():
 
-			for term in range(term_size):
+				h_int = self.mult_algo[current_h]
 
-				mat = 0
-				current_term = self.h_term_lists[current_h][term]
+				for term in range(len(self.h_term_lists[current_h])):
 
-				if "b" in current_term:
-					mat = 1
+					mat = 0
+					current_term = self.h_term_lists[current_h][term].replace(" - ","")
 
-				num = mat_triple[mat][int(current_term[1])-1][int(current_term[2])-1]
+					if "b" in current_term:
+						mat = 1
+				
+					num = mat_triple[mat][int(current_term[1])-1][int(current_term[2])-1] 
 
-				h_int = h_int.replace(current_term, str(num))
+					h_int = h_int.replace(current_term, str(num))
 
-			res[current_h] = h_int
+				res[current_h] = h_int
 
-			answer = eval(h_int)
-			#print("h" + str(x+1) + ": ",h_int, " = ", answer)
+				answer = eval(h_int)
 
 		return res
 
@@ -52,11 +53,11 @@ class Algorithm:
 			for col in range(mat_size[1]):
 				current_c = "c" + str(row+1) + str(col+1)
 
-				c_int = self.mult_algo[current_c] + " "
+				c_int = self.mult_algo[current_c]
 
-				for term in range(term_size):
+				for term in range(len(self.c_term_lists[current_c])):
 
-					current_term = self.c_term_lists[current_c][term]
+					current_term = self.c_term_lists[current_c][term].replace(" - ", "")
 
 					c_int = c_int.replace(current_term + " ", str(eval(h_ints[current_term]))+ " ")
 
@@ -66,7 +67,7 @@ class Algorithm:
 				result = eval(c_int)
 				res_mat[row][col] = result
 
-				print("c" + str(row+1) + str(col+1) +": ",c_int + " = " + str(result))
+				#print("c" + str(row+1) + str(col+1) +": ",c_int + " = " + str(result))
 		return res_mat
 
 
