@@ -185,6 +185,44 @@ class Matmul:
 			for y in range(self.mat_size[1]):
 				print("c" + str(x+1) + str(y+1) + ": ", algo.mult_algo["c" + str(x+1) + str(y+1)])
 
+	def mutate(self, algorithm):
+
+		"""
+		1: Add h
+		2: Remove h
+		3: Add (+/-)a to h
+		4: Add (+/-)b to h
+		5: Remove a from h
+		6: Remove b from h
+		7: Add (+/-)h to c
+		8: Remove h from c
+		 
+		"""
+
+		mutation_type = np.random.randint(1,8)
+
+		if mutation_type == 1:
+			self.make_h(self.MEDIUM)
+			algorithm
+		elif mutation_type == 2:
+			pass
+		elif mutation_type == 3:
+			pass
+		elif mutation_type == 4:
+			pass
+		elif mutation_type == 5:
+			pass
+		elif mutation_type == 6:
+			pass
+		elif mutation_type == 7:
+			pass
+		elif mutation_type == 8:
+			pass
+
+	def crossover(self):
+		pass
+
+
 
 	#############################################_____OLD_____##############################################################
 
@@ -221,12 +259,14 @@ class Matmul:
 		print(self.mat_triples[0][0])
 		print("MAT B")
 		print(self.mat_triples[0][1])
+		print("MAT C")
+		print(self.mat_triples[0][2])
 
-		for x in range(self.pop_size):
-			self.population.append(self.rand_algo(self.MEDIUM, self.num_terms))
+		self.init_pop(self.pop_size)
 		self.print_algo(self.population[0])
 
-		self.population[0].eval_h_c(self.mat_triples[0],self.num_terms,self.MEDIUM,self.mat_size)
+		#self.population[0].eval_h_c(self.mat_triples[0],self.num_terms,self.MEDIUM,self.mat_size)
+		self.population[0].get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
 
 		#This was all debugging to see if the representation works, it does.
 		"""self.init_mats(self.num_triples)

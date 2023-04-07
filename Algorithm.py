@@ -37,7 +37,7 @@ class Algorithm:
 			res[current_h] = h_int
 
 			answer = eval(h_int)
-			print("h" + str(x+1) + ": ",h_int, " = ", answer)
+			#print("h" + str(x+1) + ": ",h_int, " = ", answer)
 
 		return res
 
@@ -45,6 +45,8 @@ class Algorithm:
 	def eval_h_c(self, mat_triple, num_terms, term_size, mat_size):
 
 		h_ints = self.eval_h(mat_triple, num_terms, term_size, mat_size)
+
+		res_mat = np.zeros(mat_size)
 
 		for row in range(mat_size[0]):
 			for col in range(mat_size[1]):
@@ -62,13 +64,36 @@ class Algorithm:
 				c_int = c_int.replace("- -", "+ ")
 
 				result = eval(c_int)
+				res_mat[row][col] = result
 
 				print("c" + str(row+1) + str(col+1) +": ",c_int + " = " + str(result))
+		return res_mat
 
 
 
+	def get_fitness(self, num_triples, mat_triples, num_terms, term_size, mat_size):
 
-	def get_fitness(self, num_triples):
+		self.fitness_cells = 0
+		self.fitness_difference = 0
+
+		for triple in range(1):
+			result = self.eval_h_c(mat_triples[triple], num_terms, term_size, mat_size)
+			correct_result = mat_triples[triple][2]
+
+			for row in range(mat_size[0]):
+				for col in range(mat_size[1]):
+					if result[row][col] != correct_result[row][col]:
+						self.fitness_cells +=1
+						self.fitness_difference += abs(result[row][col] - correct_result[row][col])
+					else:
+						print()
+
+		print("Fitness cells: ", self.fitness_cells)
+		print("Fitness difference: ", self.fitness_difference / (mat_size[0]*mat_size[1]))
+
+
+
 		pass
+
 
 

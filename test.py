@@ -1,3 +1,2 @@
-a = "1"
-
-print(type(int(1)))
+print(-5)
+print(abs(-5))
