@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import copy
 from Algorithm import Algorithm
 
 class Matmul:
@@ -9,7 +10,7 @@ class Matmul:
 	
 	"""
 
-	def __init__(self, num_triples, verbose = False):
+	def __init__(self, num_triples, verbose = False, cells_priority = False):
 
 
 		self.mat_triples = []
@@ -23,6 +24,7 @@ class Matmul:
 		#self.population = []
 		self.algo = Algorithm()
 		self.verbose = verbose
+		self.cells_priority = cells_priority
 
 		#Should be able to remove this after initializing population
 		self.mult_algo = {}
@@ -227,15 +229,40 @@ class Matmul:
 
 			if self.verbose:
 				print("Mutation type: Remove h")
+
+			unremovable_h_list = [] #A list of h's that are the only one in a particular c and can therefore not be removed because a c must contain at least 1 term
+
+			for row in range(self.mat_size[0]):
+				for col in range(self.mat_size[1]):
+					if len(algorithm.c_term_lists["c"+str(row+1)+str(col+1)]) == 1:
+						if "-" in algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0]:
+							#print(algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
+							#print("Adding ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0][3:])
+							unremovable_h_list.append(algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0][3:])
+						else:
+							#print("Adding ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0])
+							unremovable_h_list.append(algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0])
+					else:
+						count = 0
+						h = algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0]
+						for x in range(len(algorithm.c_term_lists["c"+str(row+1)+str(col+1)])):
+							if algorithm.c_term_lists["c"+str(row+1)+str(col+1)][x] == h or algorithm.c_term_lists["c"+str(row+1)+str(col+1)][x] == " - " + h or algorithm.c_term_lists["c"+str(row+1)+str(col+1)][x] == h[3:]:
+								count +=1
+						
+						if count == len(algorithm.c_term_lists["c"+str(row+1)+str(col+1)]):
+							#print("Unallowable c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
+							unremovable_h_list.append(algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0].replace(" - ",""))
+
 			
 			h_to_remove = "h" + str(random.randint(1,self.num_terms))
 
-			while h_to_remove not in algorithm.mult_algo.keys():
+			while h_to_remove not in algorithm.mult_algo.keys() or h_to_remove in unremovable_h_list:
 				h_to_remove = "h" + str(random.randint(1,self.num_terms))
 
 			del algorithm.mult_algo[h_to_remove]
 			del algorithm.h_term_lists[h_to_remove]
 
+			#print(unremovable_h_list)
 			#print("h to remove: ", h_to_remove)
 
 			for row in range(self.mat_size[0]):
@@ -245,18 +272,20 @@ class Matmul:
 						#print("old c list: ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
 						#print("old c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
 
-						algorithm.c_term_lists["c"+str(row+1)+str(col+1)].remove(h_to_remove)
+						while h_to_remove in algorithm.c_term_lists["c"+str(row+1)+str(col+1)]:
+							algorithm.c_term_lists["c"+str(row+1)+str(col+1)].remove(h_to_remove)
 						algorithm.mult_algo["c"+str(row+1)+str(col+1)] = self.make_c(algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
 
 						#print("new c list: ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
 						#print("new c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
 
-					elif " - " + h_to_remove in algorithm.c_term_lists["c"+str(row+1)+str(col+1)]:
+					if " - " + h_to_remove in algorithm.c_term_lists["c"+str(row+1)+str(col+1)]:
 
 						#print("old c list: ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
 						#print("old c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
 
-						algorithm.c_term_lists["c"+str(row+1)+str(col+1)].remove(" - " + h_to_remove)
+						while " - " + h_to_remove in algorithm.c_term_lists["c"+str(row+1)+str(col+1)]:
+							algorithm.c_term_lists["c"+str(row+1)+str(col+1)].remove(" - " + h_to_remove)
 						algorithm.mult_algo["c"+str(row+1)+str(col+1)] = self.make_c(algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
 
 						#print("new c list: ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
@@ -330,6 +359,8 @@ class Matmul:
 
 			while not valid:
 
+				h_to_remove_from = "h" + str(random.randint(1,self.num_terms))
+
 				while h_to_remove_from not in algorithm.h_term_lists.keys():
 					h_to_remove_from = "h" + str(random.randint(1,self.num_terms))
 
@@ -371,11 +402,11 @@ class Matmul:
 			h_to_remove_from = ""
 			valid = False
 
-			###This is where I am stuck: the problem is when the algorithm is valid but has only 1 b term
-
 			while not valid:
 
-				if h_to_remove_from not in algorithm.h_term_lists.keys():
+				h_to_remove_from = "h" + str(random.randint(1,self.num_terms))
+
+				while h_to_remove_from not in algorithm.h_term_lists.keys():
 					h_to_remove_from = "h" + str(random.randint(1,self.num_terms))
 
 				num_b = 0
@@ -463,10 +494,12 @@ class Matmul:
 			#print("new c list: ", algorithm.c_term_lists[c_to_remove_from])
 			#print("new c: ", algorithm.mult_algo[c_to_remove_from])
 
+		return algorithm
+
 	def crossover(self):
 		pass
 		
-	def main(self):
+	def main(self, num_mutations, num_generations):
 
 		self.init_mats(self.num_triples)
 
@@ -476,20 +509,46 @@ class Matmul:
 		print("MAT B")
 		print(self.mat_triples[0][1])
 		print("MAT C")
-		print(self.mat_triples[0][2])
+		print(self.mat_triples[0][2], "\n")
 
 		self.algo = self.rand_algo(self.MEDIUM, self.num_terms)
 		#self.print_algo(self.algo)
 
 		self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
-		for x in range(100):
-			self.mutate(self.algo)
-			print(x)
+		
+		for x in range(num_generations):
+			if x % 1000 == 0:
+				print("Generation", x)
+			copy_algo = copy.deepcopy(self.algo)
+			new_algo = self.mutate(copy_algo)
+			for x in range(random.randint(0,4)):
+				new_algo = self.mutate(new_algo)
+			new_algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
+			if self.cells_priority:
+				if new_algo.fitness_cells < self.algo.fitness_cells:
+					self.algo = new_algo
+					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
+					print("New fitness: ", self.algo.fitness_cells, "| Difference: ", self.algo.fitness_difference)
+				elif new_algo.fitness_cells == self.algo.fitness_cells and new_algo.fitness_difference < self.algo.fitness_difference:
+					self.algo = new_algo
+					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
+					print("New fitness: ", self.algo.fitness_cells, "| Difference: ", self.algo.fitness_difference)
+			else:
+				if new_algo.fitness_difference < self.algo.fitness_difference:
+					self.algo = new_algo
+					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
+					print("New fitness: ", self.algo.fitness_difference, "| Cells: ", self.algo.fitness_cells)
+				elif new_algo.fitness_difference == self.algo.fitness_difference and new_algo.fitness_cells < self.algo.fitness_cells:
+					print("Actually here")
+					self.algo = new_algo
+					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
+					print("New fitness: ", self.algo.fitness_difference, "| Cells: ", self.algo.fitness_cells)
+			#print(x)
 		
 
 		
 if __name__ == "__main__":
 		
-	matmul = Matmul(20, verbose = True)
-	matmul.main()
+	matmul = Matmul(20, cells_priority = True, verbose = False)
+	matmul.main(3, 100000)
 

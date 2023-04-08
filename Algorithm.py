@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 class Algorithm:
 
@@ -59,7 +60,8 @@ class Algorithm:
 
 					current_term = self.c_term_lists[current_c][term].replace(" - ", "")
 
-					c_int = c_int.replace(current_term + " ", str(eval(h_ints[current_term]))+ " ")
+					if current_term in self.mult_algo.keys():
+						c_int = c_int.replace(current_term + " ", str(eval(h_ints[current_term]))+ " ")
 
 				c_int = c_int.replace("+ -", "- ")
 				c_int = c_int.replace("- -", "+ ")
@@ -74,25 +76,29 @@ class Algorithm:
 
 	def get_fitness(self, num_triples, mat_triples, num_terms, term_size, mat_size):
 
-		self.fitness_cells = 0
-		self.fitness_difference = 0
+		cells = 0
+		difference = 0
 
-		for triple in range(1):
+		for triple in range(num_triples):
+
+			difference = 0
 			result = self.eval_h_c(mat_triples[triple], num_terms, term_size, mat_size)
 			correct_result = mat_triples[triple][2]
 
 			for row in range(mat_size[0]):
 				for col in range(mat_size[1]):
 					if result[row][col] != correct_result[row][col]:
-						self.fitness_cells +=1
-						self.fitness_difference += abs(result[row][col] - correct_result[row][col])
-					else:
-						print()
+						cells +=1
+						difference += abs(result[row][col] - correct_result[row][col])
 
-		print("Fitness cells: ", self.fitness_cells)
-		print("Fitness difference: ", self.fitness_difference / (mat_size[0]*mat_size[1]))
+			difference /= mat_size[0]*mat_size[1]
+			self.fitness_difference += difference
+					
+		self.fitness_cells = cells / num_triples
+		self.fitness_difference = difference / num_triples
 
-
+		#print("Fitness cells: ", self.fitness_cells)
+		#print("Fitness difference: ", self.fitness_difference / (mat_size[0]*mat_size[1]))
 
 		pass
 
