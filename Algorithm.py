@@ -9,9 +9,12 @@ class Algorithm:
 		self.h_term_lists = {}  		#Keys same as above, values are a list of the terms
 		self.c_term_lists = {}			#Keys are index of result matrix (e.g. c23), values are sums of h-terms (e.g. h12 + h43 - h51)
 
-
 		self.fitness_cells = 1000		#Fitness function: number of incorrect cells
 		self.fitness_difference = 1000	#Fitness function: average incorrectness over all cells
+
+		self.solo_h_list_a = []			#A list of the h terms that have 1 a term
+		self.solo_h_list_b = []			#A list of the h terms that have 1 b term
+		self.solo_c_list = []			#A list of the c terms that have 1 h term
 
 	def eval_h(self, mat_triple, num_terms, term_size, mat_size):
 
@@ -76,8 +79,10 @@ class Algorithm:
 
 	def get_fitness(self, num_triples, mat_triples, num_terms, term_size, mat_size):
 
+		self.fitness_difference = 0
+		self.fitness_cells = 0
+
 		cells = 0
-		difference = 0
 
 		for triple in range(num_triples):
 
@@ -93,9 +98,9 @@ class Algorithm:
 
 			difference /= mat_size[0]*mat_size[1]
 			self.fitness_difference += difference
-					
+
 		self.fitness_cells = cells / num_triples
-		self.fitness_difference = difference / num_triples
+		self.fitness_difference /= num_triples
 
 		#print("Fitness cells: ", self.fitness_cells)
 		#print("Fitness difference: ", self.fitness_difference / (mat_size[0]*mat_size[1]))
