@@ -569,5 +569,5 @@ class Matmul:
 if __name__ == "__main__":
 		
 	matmul = Matmul(5, cells_priority = False, verbose = False)
-	matmul.main(1, 200)
+	matmul.main(1, 10000)
 
