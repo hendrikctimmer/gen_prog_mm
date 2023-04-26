@@ -24,6 +24,7 @@ class Matmul:
 		self.algo = Algorithm()
 		self.verbose = verbose					#Toggle verbose mode for debugging
 		self.cells_priority = cells_priority	#Toggle cell priority mode, where cell fitness is prioritized
+		self.h_added = 0
 		
 	def init_mats(self, num_triples):
 		
@@ -214,10 +215,34 @@ class Matmul:
 			if self.verbose:
 				print("Mutation type: New h")
 
+			h_to_add = "h" + str(self.num_terms + 1)
+
 			new_h_list = self.make_h_list(self.MEDIUM)
 			new_h = self.make_h(self.MEDIUM, new_h_list)
 			algorithm.h_term_lists["h" + str(self.num_terms + 1)] = new_h_list
 			algorithm.mult_algo["h" + str(self.num_terms + 1)] = new_h
+
+
+			#Also add this new h to one of the c's
+
+			c_to_add_to = "c" + str(random.randint(1,5)) + str(random.randint(1,5))
+
+			if random.randint(0,1) == 1:
+				h_to_add = " - " + h_to_add
+
+			#print("h to add: ", h_to_add)
+
+			#print("old c list: ", algorithm.c_term_lists[c_to_add_to])
+			#print("old c: ", algorithm.mult_algo[c_to_add_to])
+
+			algorithm.c_term_lists[c_to_add_to].append(h_to_add)
+			algorithm.mult_algo[c_to_add_to] = self.make_c(algorithm.c_term_lists[c_to_add_to])
+
+			#print("new c list: ", algorithm.c_term_lists[c_to_add_to])
+			#print("new c: ", algorithm.mult_algo[c_to_add_to])
+
+			
+			self.h_added += 1
 			self.num_terms += 1
 
 		elif mutation_type == 2:
@@ -227,6 +252,8 @@ class Matmul:
 
 			unremovable_h_list = [] #A list of h's that are the only one in a particular c and can therefore not be removed because a c must contain at least 1 term
 
+			go_break = False
+
 			for row in range(self.mat_size[0]):		#This loop checks all c terms to see how many h terms they contain. If it is 1, then the h in that c term is added to the "unremovable" list
 				for col in range(self.mat_size[1]):
 					if len(algorithm.c_term_lists["c"+str(row+1)+str(col+1)]) == 1:
@@ -235,9 +262,13 @@ class Matmul:
 							#print(algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
 							#print("Adding ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0][3:])
 							unremovable_h_list.append(algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0][3:])
+							#go_break = True
+							#break
 						else:
 							#print("Adding ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0])
 							unremovable_h_list.append(algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0])
+							#go_break = True
+							#break
 					else:		#This part checks whether a c term that contains multiple h terms contains only multiple of the same h term, if so, that h is added to the "unremovable" list
 						count = 0
 						h = algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0]
@@ -248,6 +279,9 @@ class Matmul:
 						if count == len(algorithm.c_term_lists["c"+str(row+1)+str(col+1)]):
 							#print("Unallowable c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
 							unremovable_h_list.append(algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0].replace(" - ",""))
+							#go_break = True
+							#break
+
 
 
 			h_to_remove = "h" + str(random.randint(1,self.num_terms))
@@ -259,7 +293,7 @@ class Matmul:
 					return algorithm
 				h_to_remove = "h" + str(random.randint(1,self.num_terms))
 
-			print("Removing ", h_to_remove)
+			#print("Removing ", h_to_remove)
 
 			del algorithm.mult_algo[h_to_remove]
 			del algorithm.h_term_lists[h_to_remove]
@@ -537,37 +571,50 @@ class Matmul:
 
 		time_0 = time.time()
 
-		for x in range(num_generations):
-			if x % 100 == 0:
-				print("Generation", x)
-			copy_algo = copy.deepcopy(self.algo)
-			new_algo = copy.deepcopy(self.mutate(copy_algo))
-			#self.print_algo(copy_algo)
-			#for x in range(num_mutations):
-			#	new_algo = self.mutate(new_algo)
+		
+
+		for gen in range(num_generations):
+			if gen % 100 == 0 or gen == 0 or gen == num_generations-1:
+				f = open("mutation" + str(num_mutations) + ".txt", "a")
+				f.write(str(gen) + "," + str(self.algo.fitness_difference) + "," + str(self.algo.fitness_cells) + "\n")
+				f.close()
+				print("Generation", gen)
+			new_algo = copy.deepcopy(self.algo)
+			for mutation in range(num_mutations):
+				new_algo = copy.deepcopy(self.mutate(new_algo))
 			new_algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
 			if self.cells_priority:
 				if new_algo.fitness_cells < self.algo.fitness_cells:
 					self.algo = new_algo
 					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
-					print("New fitness: ", self.algo.fitness_cells, "| Difference: ", self.algo.fitness_difference)
+					print("New fitness cells: %.2f | Difference: %f" % (self.algo.fitness_cells, self.algo.fitness_difference))
+					self.h_added = 0
+				else:
+					self.num_terms -= self.h_added
+					self.h_added = 0
 			else:
 				if new_algo.fitness_difference < self.algo.fitness_difference:
 					self.algo = new_algo
 					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
-					print("New fitness: ", self.algo.fitness_difference, "| Cells: ", self.algo.fitness_cells)
+					print("New fitness difference: %.3f | Cells: %.2f" % (self.algo.fitness_difference, self.algo.fitness_cells))
+					self.h_added = 0
+				else:
+					self.num_terms -= self.h_added
+					self.h_added = 0
 
 			#DEBUGGING
 			#self.algo = new_algo
 		self.print_algo(self.algo)
 
-		print("Final fitness difference: ", self.algo.fitness_difference, "| Final fitness cells: ", self.algo.fitness_cells)
-		print("Time: ", time.time() - time_0)
+		print("Final fitness difference: %.3f | Final fitness cells: %.2f" % (self.algo.fitness_difference,self.algo.fitness_cells))
+		print("Time: %.2f" % (time.time() - time_0))
+		print("Final number of h's: ", len(self.algo.h_term_lists.keys()))
 		
 
 		
 if __name__ == "__main__":
 		
-	matmul = Matmul(5, cells_priority = False, verbose = False)
-	matmul.main(1, 10000)
+	matmul = Matmul(10, cells_priority = False, verbose = False)
+	for x in range(5):
+		matmul.main(x+1, 10000)
 
