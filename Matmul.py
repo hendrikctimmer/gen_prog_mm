@@ -15,12 +15,12 @@ class Matmul:
 
 
 		self.mat_triples = []           		#List of triples of matrices in form [a,b,c] where a * b = c
-		self.mat_size = [5,5]
+		self.mat_size = [2,2]
 		self.num_triples = num_triples
 		self.SMALL = 2
 		self.MEDIUM = 5
 		self.LARGE = 10
-		self.num_terms = 125
+		self.num_terms = self.mat_size[0] * self.mat_size[0] * self.mat_size[1]
 		self.algo = Algorithm()
 		self.verbose = verbose					#Toggle verbose mode for debugging
 		self.cells_priority = cells_priority	#Toggle cell priority mode, where cell fitness is prioritized
@@ -30,8 +30,8 @@ class Matmul:
 		
 		for x in range(num_triples):
 		
-			m1 = np.random.randint(low=-10, high=11, size=(5, 5))
-			m2 = np.random.randint(low=-10, high=11, size=(5, 5))
+			m1 = np.random.randint(low=-10, high=11, size=(self.mat_size[0], self.mat_size[1]))
+			m2 = np.random.randint(low=-10, high=11, size=(self.mat_size[0], self.mat_size[1]))
 			m3 = np.matmul(m1,m2)
 			
 			mat = (m1,m2,m3)
@@ -45,7 +45,7 @@ class Matmul:
 		for x in range(num_terms):
 
 			h_term_list = self.make_h_list(term_size)
-			h_term = self.make_h(term_size, h_term_list)
+			h_term = self.make_h(h_term_list)
 
 			res.h_term_lists["h" + str(x+1)] = h_term_list
 			res.mult_algo["h" + str(x+1)] = h_term
@@ -61,14 +61,14 @@ class Matmul:
 
 		return res
 
-	def make_ab_term(self):
+	def make_ab_term(self, term_size):
 		prob = random.uniform(0, 1)
 		term_to_add = ""
 		if prob > 0.5:
 			term_to_add += " - "
 		term_to_add += random.choice(["a", "b"])
-		term_to_add += str(random.randint(1,5))
-		term_to_add += str(random.randint(1,5))
+		term_to_add += str(random.randint(1,self.mat_size[0]))
+		term_to_add += str(random.randint(1,self.mat_size[1]))
 
 		return term_to_add
 
@@ -77,14 +77,14 @@ class Matmul:
 		h_term_list = []
 
 		for x in range(term_size):
-			h_term_list.append(self.make_ab_term())
+			h_term_list.append(self.make_ab_term(term_size))
 
 		if self.one_sided_h(h_term_list):
 			h_term_list = self.make_h_list(term_size)
 
 		return h_term_list
 
-	def make_h(self, term_size, h_term_list):
+	def make_h(self, h_term_list):
 
 		h_term_a = ""
 		h_term_b = ""
@@ -130,7 +130,7 @@ class Matmul:
 			if prob > 0.5:
 				term_to_add += " - "
 			term_to_add += "h"
-			term_to_add += str(random.randint(1,125))
+			term_to_add += str(random.randint(1,self.num_terms))
 			c_term_list.append(term_to_add)
 
 		return c_term_list
@@ -191,7 +191,7 @@ class Matmul:
 			for y in range(self.mat_size[1]):
 				print("c" + str(x+1) + str(y+1) + ": ", "(" + algo.mult_algo["c" + str(x+1) + str(y+1)] + ")")
 
-	def mutate(self, algorithm):
+	def mutate(self, algorithm, term_size):
 
 		"""
 		1: Add h
@@ -217,15 +217,15 @@ class Matmul:
 
 			h_to_add = "h" + str(self.num_terms + 1)
 
-			new_h_list = self.make_h_list(self.MEDIUM)
-			new_h = self.make_h(self.MEDIUM, new_h_list)
+			new_h_list = self.make_h_list(term_size)
+			new_h = self.make_h(new_h_list)
 			algorithm.h_term_lists["h" + str(self.num_terms + 1)] = new_h_list
 			algorithm.mult_algo["h" + str(self.num_terms + 1)] = new_h
 
 
 			#Also add this new h to one of the c's
 
-			c_to_add_to = "c" + str(random.randint(1,5)) + str(random.randint(1,5))
+			c_to_add_to = "c" + str(random.randint(1,self.mat_size[0])) + str(random.randint(1,self.mat_size[0]))
 
 			if random.randint(0,1) == 1:
 				h_to_add = " - " + h_to_add
@@ -297,6 +297,10 @@ class Matmul:
 
 			del algorithm.mult_algo[h_to_remove]
 			del algorithm.h_term_lists[h_to_remove]
+			if h_to_remove in algorithm.solo_h_list_a:
+				algorithm.solo_h_list_a.remove(h_to_remove)
+			if h_to_remove in algorithm.solo_h_list_b:
+				algorithm.solo_h_list_b.remove(h_to_remove)
 
 			#print(unremovable_h_list)
 			#print("h to remove: ", h_to_remove)
@@ -337,8 +341,8 @@ class Matmul:
 			if random.randint(0,1) == 1:
 				a_to_add = " - " + a_to_add
 
-			a_to_add += str(random.randint(1,5))
-			a_to_add += str(random.randint(1,5))
+			a_to_add += str(random.randint(1,self.mat_size[0]))
+			a_to_add += str(random.randint(1,self.mat_size[1]))
 
 			#print("new a: ", a_to_add)
 
@@ -351,7 +355,10 @@ class Matmul:
 			#print("old h: ", algorithm.mult_algo[h_to_add_to])
 
 			algorithm.h_term_lists[h_to_add_to].append(a_to_add)
-			algorithm.mult_algo[h_to_add_to] = self.make_h(self.MEDIUM, algorithm.h_term_lists[h_to_add_to])
+			algorithm.mult_algo[h_to_add_to] = self.make_h(algorithm.h_term_lists[h_to_add_to])
+
+			if h_to_add_to in algorithm.solo_h_list_a:
+				algorithm.solo_h_list_a.remove(h_to_add_to)
 
 			#print("new h list: ", algorithm.h_term_lists[h_to_add_to])
 			#print("new h: ", algorithm.mult_algo[h_to_add_to])
@@ -366,8 +373,8 @@ class Matmul:
 			if random.randint(0,1) == 1:
 				b_to_add = " - " + b_to_add
 
-			b_to_add += str(random.randint(1,5))
-			b_to_add += str(random.randint(1,5))
+			b_to_add += str(random.randint(1,self.mat_size[0]))
+			b_to_add += str(random.randint(1,self.mat_size[1]))
 
 			#print("new b: ", b_to_add)
 
@@ -380,7 +387,10 @@ class Matmul:
 			#print("old h: ", algorithm.mult_algo[h_to_add_to])
 
 			algorithm.h_term_lists[h_to_add_to].append(b_to_add)
-			algorithm.mult_algo[h_to_add_to] = self.make_h(self.MEDIUM, algorithm.h_term_lists[h_to_add_to])
+			algorithm.mult_algo[h_to_add_to] = self.make_h(algorithm.h_term_lists[h_to_add_to])
+
+			if h_to_add_to in algorithm.solo_h_list_b:
+				algorithm.solo_h_list_b.remove(h_to_add_to)
 
 			#print("new h list: ", algorithm.h_term_lists[h_to_add_to])
 			#print("new h: ", algorithm.mult_algo[h_to_add_to])
@@ -392,6 +402,8 @@ class Matmul:
 			
 			h_to_remove_from = ""
 			valid = False
+
+			excess = 0
 
 			while not valid:
 
@@ -412,8 +424,15 @@ class Matmul:
 					algorithm.solo_h_list_a.append(h_to_remove_from)
 
 				if len(algorithm.solo_h_list_a) == len(algorithm.h_term_lists.keys()):
-					print("Ran out of a terms to remove!")
+					#print("Ran out of a terms to remove!")
 					return algorithm
+
+				excess +=1
+				if excess > 1000:
+					self.print_algo(self.algo)
+					print(algorithm.h_term_lists.keys())
+					print(algorithm.solo_h_list_a)
+					quit()
 
 			terms = []
 
@@ -431,7 +450,7 @@ class Matmul:
 			#print("old h: ", algorithm.mult_algo[h_to_remove_from])
 
 			algorithm.h_term_lists[h_to_remove_from].remove(picked_term)
-			algorithm.mult_algo[h_to_remove_from] = self.make_h(self.MEDIUM, algorithm.h_term_lists[h_to_remove_from])
+			algorithm.mult_algo[h_to_remove_from] = self.make_h(algorithm.h_term_lists[h_to_remove_from])
 
 			#print("new h list: ", algorithm.h_term_lists[h_to_remove_from])
 			#print("new h: ", algorithm.mult_algo[h_to_remove_from])
@@ -443,6 +462,8 @@ class Matmul:
 			
 			h_to_remove_from = ""
 			valid = False
+
+			excess = 0
 
 			while not valid:
 
@@ -463,8 +484,13 @@ class Matmul:
 					algorithm.solo_h_list_b.append(h_to_remove_from)
 
 				if len(algorithm.solo_h_list_b) == len(algorithm.h_term_lists.keys()):
-					print("Ran out of b terms to remove!")
+					#print("Ran out of b terms to remove!")
 					return algorithm
+
+				excess += 1
+				if excess > 1000:
+					self.print_algo(self.algo)
+					quit()
 
 			terms = []
 
@@ -482,7 +508,7 @@ class Matmul:
 			#print("old h: ", algorithm.mult_algo[h_to_remove_from])
 
 			algorithm.h_term_lists[h_to_remove_from].remove(picked_term)
-			algorithm.mult_algo[h_to_remove_from] = self.make_h(self.MEDIUM, algorithm.h_term_lists[h_to_remove_from])
+			algorithm.mult_algo[h_to_remove_from] = self.make_h(algorithm.h_term_lists[h_to_remove_from])
 
 			#print("new h list: ", algorithm.h_term_lists[h_to_remove_from])
 			#print("new h: ", algorithm.mult_algo[h_to_remove_from])
@@ -497,7 +523,7 @@ class Matmul:
 			while h_to_add not in algorithm.mult_algo.keys():
 				h_to_add = "h" + str(random.randint(1,self.num_terms))
 
-			c_to_add_to = "c" + str(random.randint(1,5)) + str(random.randint(1,5))
+			c_to_add_to = "c" + str(random.randint(1,self.mat_size[0])) + str(random.randint(1,self.mat_size[1]))
 
 			if random.randint(0,1) == 1:
 				h_to_add = " - " + h_to_add
@@ -523,7 +549,7 @@ class Matmul:
 
 			while not valid:
 
-				c_to_remove_from = "c" + str(random.randint(1,5)) + str(random.randint(1,5))
+				c_to_remove_from = "c" + str(random.randint(1,self.mat_size[0])) + str(random.randint(1,self.mat_size[1]))
 				
 				if len(algorithm.c_term_lists[c_to_remove_from]) > 2:
 					valid = True
@@ -531,7 +557,7 @@ class Matmul:
 					algorithm.solo_c_list.append(c_to_remove_from)
 
 				if len(algorithm.solo_c_list) == len(algorithm.c_term_lists.keys()):
-					print("Ran out of h terms to remove from c terms!")
+					#print("Ran out of h terms to remove from c terms!")
 					return algorithm
 
 			picked_term_i = random.randint(0,len(algorithm.c_term_lists[c_to_remove_from])-1)
@@ -550,7 +576,7 @@ class Matmul:
 
 		return algorithm
 
-	def main(self, num_mutations, num_generations):
+	def main(self, num_mutations, num_generations, term_size, random_mutations = False):
 
 		self.init_mats(self.num_triples)
 
@@ -562,31 +588,31 @@ class Matmul:
 		print("MAT C")
 		print(self.mat_triples[0][2], "\n")
 
-		self.algo = self.rand_algo(self.MEDIUM, self.num_terms)
+		self.algo = self.rand_algo(term_size, self.num_terms)
 		#self.print_algo(self.algo)
 
-		self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
+		self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,term_size,self.mat_size)
 
 		print(self.algo.fitness_difference)
 
 		time_0 = time.time()
 
-		
-
 		for gen in range(num_generations):
 			if gen % 100 == 0 or gen == 0 or gen == num_generations-1:
-				f = open("mutation" + str(num_mutations) + ".txt", "a")
+				f = open("2x2mutation" + str(num_mutations) + ".txt", "a")
 				f.write(str(gen) + "," + str(self.algo.fitness_difference) + "," + str(self.algo.fitness_cells) + "\n")
 				f.close()
 				print("Generation", gen)
 			new_algo = copy.deepcopy(self.algo)
+			if random_mutations:
+				num_mutations = random.randint(1,5)
 			for mutation in range(num_mutations):
-				new_algo = copy.deepcopy(self.mutate(new_algo))
-			new_algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
+				new_algo = copy.deepcopy(self.mutate(new_algo, term_size))
+			new_algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,term_size,self.mat_size)
 			if self.cells_priority:
 				if new_algo.fitness_cells < self.algo.fitness_cells:
 					self.algo = new_algo
-					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
+					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,term_size,self.mat_size)
 					print("New fitness cells: %.2f | Difference: %f" % (self.algo.fitness_cells, self.algo.fitness_difference))
 					self.h_added = 0
 				else:
@@ -595,7 +621,7 @@ class Matmul:
 			else:
 				if new_algo.fitness_difference < self.algo.fitness_difference:
 					self.algo = new_algo
-					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,self.MEDIUM,self.mat_size)
+					self.algo.get_fitness(self.num_triples, self.mat_triples,self.num_terms,term_size,self.mat_size)
 					print("New fitness difference: %.3f | Cells: %.2f" % (self.algo.fitness_difference, self.algo.fitness_cells))
 					self.h_added = 0
 				else:
@@ -614,7 +640,8 @@ class Matmul:
 		
 if __name__ == "__main__":
 		
-	matmul = Matmul(10, cells_priority = False, verbose = False)
-	for x in range(5):
-		matmul.main(x+1, 10000)
+	matmul = Matmul(5, cells_priority = False, verbose = False)
+	#for x in range(5):
+	#	matmul.main(x+1, 1000, matmul.SMALL)
+	matmul.main(97, 10000, term_size = 3, random_mutations = True)
 
