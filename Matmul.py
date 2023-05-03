@@ -1,3 +1,6 @@
+from numba import jit
+from numba import cuda
+import numba
 import numpy as np
 import random
 import copy
@@ -15,7 +18,7 @@ class Matmul:
 
 
 		self.mat_triples = []           		#List of triples of matrices in form [a,b,c] where a * b = c
-		self.mat_size = [2,2]
+		self.mat_size = [5,5]
 		self.num_triples = num_triples
 		self.SMALL = 2
 		self.MEDIUM = 5
@@ -206,7 +209,7 @@ class Matmul:
 		"""
 
 		#mutation_type = 8 #for debugging mutations
-		mutation_type = random.randint(1,8)
+		mutation_type = np.float64(random.randint(1,8))
 
 		#print("Mutation type: ", mutation_type)
 
@@ -427,13 +430,6 @@ class Matmul:
 					#print("Ran out of a terms to remove!")
 					return algorithm
 
-				excess +=1
-				if excess > 1000:
-					self.print_algo(self.algo)
-					print(algorithm.h_term_lists.keys())
-					print(algorithm.solo_h_list_a)
-					quit()
-
 			terms = []
 
 			for term in algorithm.h_term_lists[h_to_remove_from]:
@@ -486,11 +482,6 @@ class Matmul:
 				if len(algorithm.solo_h_list_b) == len(algorithm.h_term_lists.keys()):
 					#print("Ran out of b terms to remove!")
 					return algorithm
-
-				excess += 1
-				if excess > 1000:
-					self.print_algo(self.algo)
-					quit()
 
 			terms = []
 
@@ -575,7 +566,7 @@ class Matmul:
 			#print("new c: ", algorithm.mult_algo[c_to_remove_from])
 
 		return algorithm
-
+	
 	def main(self, num_mutations, num_generations, term_size, random_mutations = False):
 
 		self.init_mats(self.num_triples)
@@ -599,7 +590,10 @@ class Matmul:
 
 		for gen in range(num_generations):
 			if gen % 100 == 0 or gen == 0 or gen == num_generations-1:
-				f = open("2x2mutation" + str(num_mutations) + ".txt", "a")
+				if random_mutations:
+					f = open("run3mutationr" + ".txt", "a")
+				else:
+					f = open("run3mutation" + str(num_mutations) + ".txt", "a")
 				f.write(str(gen) + "," + str(self.algo.fitness_difference) + "," + str(self.algo.fitness_cells) + "\n")
 				f.close()
 				print("Generation", gen)
@@ -641,7 +635,7 @@ class Matmul:
 if __name__ == "__main__":
 		
 	matmul = Matmul(5, cells_priority = False, verbose = False)
-	#for x in range(5):
-	#	matmul.main(x+1, 1000, matmul.SMALL)
-	matmul.main(97, 10000, term_size = 3, random_mutations = True)
+	for x in range(5):
+		matmul.main(x+1, 100000, matmul.MEDIUM)
+	matmul.main(1, 100000, term_size = matmul.MEDIUM, random_mutations = True)
 
