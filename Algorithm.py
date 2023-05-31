@@ -22,7 +22,7 @@ class Algorithm:
 
 		for x in range(num_terms):
 
-			current_h = "h" + str(x+1)
+			current_h = f"h{x+1}"
 
 			if current_h in self.mult_algo.keys():
 
@@ -38,11 +38,11 @@ class Algorithm:
 				
 					num = mat_triple[mat][int(current_term[1])-1][int(current_term[2])-1] 
 
-					h_int = h_int.replace(current_term, str(num))
+					h_int = h_int.replace(current_term, f"{num}")
 
 				res[current_h] = h_int
 
-				answer = eval(h_int)
+				#answer = eval(h_int)
 
 		return res
 
@@ -55,7 +55,7 @@ class Algorithm:
 
 		for row in range(mat_size[0]):
 			for col in range(mat_size[1]):
-				current_c = "c" + str(row+1) + str(col+1)
+				current_c = f"c{row+1}{col+1}"
 
 				c_int = self.mult_algo[current_c]
 
@@ -64,7 +64,7 @@ class Algorithm:
 					current_term = self.c_term_lists[current_c][term].replace(" - ", "")
 
 					if current_term in self.mult_algo.keys():
-						c_int = c_int.replace(current_term + " ", str(eval(h_ints[current_term]))+ " ")
+						c_int = c_int.replace(current_term + " ", f"{eval(h_ints[current_term])} ")
 
 				c_int = c_int.replace("+ -", "- ")
 				c_int = c_int.replace("- -", "+ ")
@@ -72,7 +72,6 @@ class Algorithm:
 				result = eval(c_int)
 				res_mat[row][col] = result
 
-				#print("c" + str(row+1) + str(col+1) +": ",c_int + " = " + str(result))
 		return res_mat
 
 

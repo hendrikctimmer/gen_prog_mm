@@ -47,8 +47,8 @@ class Matmul:
 			h_term_list = self.make_h_list(term_size)
 			h_term = self.make_h(h_term_list)
 
-			res.h_term_lists[f"h{x+1}"] = h_term_list
-			res.mult_algo[f"h{x+1}"] = h_term
+			res.h_term_lists["h" + str(x+1)] = h_term_list
+			res.mult_algo["h" + str(x+1)] = h_term
 
 		for x in range(self.mat_size[0]):
 			for y in range(self.mat_size[1]):
@@ -56,8 +56,8 @@ class Matmul:
 				c_term_list = self.make_c_list(term_size)
 				c_term = self.make_c(c_term_list)
 
-				res.c_term_lists[f"c{x+1}{y+1}"] = c_term_list
-				res.mult_algo[f"c{x+1}{y+1}"] = c_term
+				res.c_term_lists["c" + str(x+1) + str(y+1)] = c_term_list
+				res.mult_algo["c" + str(x+1) + str(y+1)] = c_term
 
 		return res
 
@@ -67,8 +67,8 @@ class Matmul:
 		if prob > 0.5:
 			term_to_add += " - "
 		term_to_add += random.choice(["a", "b"])
-		term_to_add += f"{random.randint(1,self.mat_size[0])}"
-		term_to_add += f"{random.randint(1,self.mat_size[1])}"
+		term_to_add += str(random.randint(1,self.mat_size[0]))
+		term_to_add += str(random.randint(1,self.mat_size[1]))
 
 		return term_to_add
 
@@ -130,7 +130,7 @@ class Matmul:
 			if prob > 0.5:
 				term_to_add += " - "
 			term_to_add += "h"
-			term_to_add += f"{random.randint(1,self.num_terms)}"
+			term_to_add += str(random.randint(1,self.num_terms))
 			c_term_list.append(term_to_add)
 
 		return c_term_list
@@ -189,7 +189,7 @@ class Matmul:
 
 		for x in range(self.mat_size[0]):
 			for y in range(self.mat_size[1]):
-				print(f"c{x+1}{y+1}: ", "(" + algo.mult_algo[f"c{x+1}{y+1}"] + ")")
+				print("c" + str(x+1) + str(y+1) + ": ", "(" + algo.mult_algo["c" + str(x+1) + str(y+1)] + ")")
 
 	def mutate(self, algorithm, term_size):
 
@@ -215,17 +215,17 @@ class Matmul:
 			if self.verbose:
 				print("Mutation type: New h")
 
-			h_to_add = f"h{self.num_terms+1}"
+			h_to_add = "h" + str(self.num_terms + 1)
 
 			new_h_list = self.make_h_list(term_size)
 			new_h = self.make_h(new_h_list)
-			algorithm.h_term_lists[f"h{self.num_terms+1}"] = new_h_list
-			algorithm.mult_algo[f"h{self.num_terms+1}"] = new_h
+			algorithm.h_term_lists["h" + str(self.num_terms + 1)] = new_h_list
+			algorithm.mult_algo["h" + str(self.num_terms + 1)] = new_h
 
 
 			#Also add this new h to one of the c's
 
-			c_to_add_to = f"c{random.randint(1,self.mat_size[0])}{random.randint(1,self.mat_size[0])}"
+			c_to_add_to = "c" + str(random.randint(1,self.mat_size[0])) + str(random.randint(1,self.mat_size[0]))
 
 			if random.randint(0,1) == 1:
 				h_to_add = " - " + h_to_add
@@ -256,31 +256,42 @@ class Matmul:
 
 			for row in range(self.mat_size[0]):		#This loop checks all c terms to see how many h terms they contain. If it is 1, then the h in that c term is added to the "unremovable" list
 				for col in range(self.mat_size[1]):
-					if len(algorithm.c_term_lists[f"c{row+1}{col+1}"]) == 1:
-						if "-" in algorithm.c_term_lists[f"c{row+1}{col+1}"][0]:
-							unremovable_h_list.append(algorithm.c_term_lists[f"c{row+1}{col+1}"][0][3:])
+					if len(algorithm.c_term_lists["c"+str(row+1)+str(col+1)]) == 1:
+						#print("c"+str(row+1)+str(col+1), " has 1 term")
+						if "-" in algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0]:
+							#print(algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
+							#print("Adding ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0][3:])
+							unremovable_h_list.append(algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0][3:])
+							#go_break = True
+							#break
 						else:
-							unremovable_h_list.append(algorithm.c_term_lists[f"c{row+1}{col+1}"][0])
+							#print("Adding ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0])
+							unremovable_h_list.append(algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0])
+							#go_break = True
+							#break
 					else:		#This part checks whether a c term that contains multiple h terms contains only multiple of the same h term, if so, that h is added to the "unremovable" list
 						count = 0
-						h = algorithm.c_term_lists[f"c{row+1}{col+1}"][0]
-						for x in range(len(algorithm.c_term_lists[f"c{row+1}{col+1}"])):
-							if algorithm.c_term_lists[f"c{row+1}{col+1}"][x] == h or algorithm.c_term_lists[f"c{row+1}{col+1}"][x] == " - " + h or algorithm.c_term_lists[f"c{row+1}{col+1}"][x] == h[3:]:
+						h = algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0]
+						for x in range(len(algorithm.c_term_lists["c"+str(row+1)+str(col+1)])):
+							if algorithm.c_term_lists["c"+str(row+1)+str(col+1)][x] == h or algorithm.c_term_lists["c"+str(row+1)+str(col+1)][x] == " - " + h or algorithm.c_term_lists["c"+str(row+1)+str(col+1)][x] == h[3:]:
 								count +=1
 						
-						if count == len(algorithm.c_term_lists[f"c{row+1}{col+1}"]):
-							unremovable_h_list.append(algorithm.c_term_lists[f"c{row+1}{col+1}"][0].replace(" - ",""))
+						if count == len(algorithm.c_term_lists["c"+str(row+1)+str(col+1)]):
+							#print("Unallowable c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
+							unremovable_h_list.append(algorithm.c_term_lists["c"+str(row+1)+str(col+1)][0].replace(" - ",""))
+							#go_break = True
+							#break
 
 
 
-			h_to_remove = f"h{random.randint(1,self.num_terms)}"
+			h_to_remove = "h" + str(random.randint(1,self.num_terms))
 
 			unremovable_h_list = dict.fromkeys(unremovable_h_list)
 
 			while h_to_remove not in algorithm.mult_algo.keys() or h_to_remove in unremovable_h_list:
 				if len(unremovable_h_list) == len(algorithm.h_term_lists.keys()):
 					return algorithm
-				h_to_remove = f"h{random.randint(1,self.num_terms)}"
+				h_to_remove = "h" + str(random.randint(1,self.num_terms))
 
 			#print("Removing ", h_to_remove)
 
@@ -296,18 +307,29 @@ class Matmul:
 
 			for row in range(self.mat_size[0]):
 				for col in range(self.mat_size[1]):
-					if h_to_remove in algorithm.c_term_lists[f"c{row+1}{col+1}"]:
+					if h_to_remove in algorithm.c_term_lists["c"+str(row+1)+str(col+1)]:
 
-						while h_to_remove in algorithm.c_term_lists[f"c{row+1}{col+1}"]:
-							algorithm.c_term_lists[f"c{row+1}{col+1}"].remove(h_to_remove)
-						algorithm.mult_algo[f"c{row+1}{col+1}"] = self.make_c(algorithm.c_term_lists[f"c{row+1}{col+1}"])
+						#print("old c list: ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
+						#print("old c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
 
-					if " - " + h_to_remove in algorithm.c_term_lists[f"c{row+1}{col+1}"]:
+						while h_to_remove in algorithm.c_term_lists["c"+str(row+1)+str(col+1)]:
+							algorithm.c_term_lists["c"+str(row+1)+str(col+1)].remove(h_to_remove)
+						algorithm.mult_algo["c"+str(row+1)+str(col+1)] = self.make_c(algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
 
-						while " - " + h_to_remove in algorithm.c_term_lists[f"c{row+1}{col+1}"]:
-							algorithm.c_term_lists[f"c{row+1}{col+1}"].remove(" - " + h_to_remove)
-						algorithm.mult_algo[f"c{row+1}{col+1}"] = self.make_c(algorithm.c_term_lists[f"c{row+1}{col+1}"])
+						#print("new c list: ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
+						#print("new c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
 
+					if " - " + h_to_remove in algorithm.c_term_lists["c"+str(row+1)+str(col+1)]:
+
+						#print("old c list: ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
+						#print("old c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
+
+						while " - " + h_to_remove in algorithm.c_term_lists["c"+str(row+1)+str(col+1)]:
+							algorithm.c_term_lists["c"+str(row+1)+str(col+1)].remove(" - " + h_to_remove)
+						algorithm.mult_algo["c"+str(row+1)+str(col+1)] = self.make_c(algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
+
+						#print("new c list: ", algorithm.c_term_lists["c"+str(row+1)+str(col+1)])
+						#print("new c: ", algorithm.mult_algo["c"+str(row+1)+str(col+1)])
 
 		elif mutation_type == 3:
 
@@ -319,15 +341,15 @@ class Matmul:
 			if random.randint(0,1) == 1:
 				a_to_add = " - " + a_to_add
 
-			a_to_add += f"{random.randint(1,self.mat_size[0])}"
-			a_to_add += f"{random.randint(1,self.mat_size[1])}"
+			a_to_add += str(random.randint(1,self.mat_size[0]))
+			a_to_add += str(random.randint(1,self.mat_size[1]))
 
 			#print("new a: ", a_to_add)
 
-			h_to_add_to = f"h{random.randint(1,self.num_terms)}"
+			h_to_add_to = "h" + str(random.randint(1,self.num_terms))
 
 			while h_to_add_to not in algorithm.mult_algo.keys():
-				h_to_add_to = f"h{random.randint(1,self.num_terms)}"
+				h_to_add_to = "h" + str(random.randint(1,self.num_terms))
 
 			#print("old h list: ", algorithm.h_term_lists[h_to_add_to])
 			#print("old h: ", algorithm.mult_algo[h_to_add_to])
@@ -351,15 +373,15 @@ class Matmul:
 			if random.randint(0,1) == 1:
 				b_to_add = " - " + b_to_add
 
-			b_to_add += f"{random.randint(1,self.mat_size[0])}"
-			b_to_add += f"{random.randint(1,self.mat_size[1])}"
+			b_to_add += str(random.randint(1,self.mat_size[0]))
+			b_to_add += str(random.randint(1,self.mat_size[1]))
 
 			#print("new b: ", b_to_add)
 
-			h_to_add_to = f"h{random.randint(1,self.num_terms)}"
+			h_to_add_to = "h" + str(random.randint(1,self.num_terms))
 
 			while h_to_add_to not in algorithm.mult_algo.keys():
-				h_to_add_to = f"h{random.randint(1,self.num_terms)}"
+				h_to_add_to = "h" + str(random.randint(1,self.num_terms))
 
 			#print("old h list: ", algorithm.h_term_lists[h_to_add_to])
 			#print("old h: ", algorithm.mult_algo[h_to_add_to])
@@ -385,10 +407,10 @@ class Matmul:
 
 			while not valid:
 
-				h_to_remove_from = f"h{random.randint(1,self.num_terms)}"
+				h_to_remove_from = "h" + str(random.randint(1,self.num_terms))
 
 				while h_to_remove_from not in algorithm.h_term_lists.keys():
-					h_to_remove_from = f"h{random.randint(1,self.num_terms)}"
+					h_to_remove_from = "h" + str(random.randint(1,self.num_terms))
 
 				num_a = 0
 
@@ -438,10 +460,10 @@ class Matmul:
 
 			while not valid:
 
-				h_to_remove_from = f"h{random.randint(1,self.num_terms)}"
+				h_to_remove_from = "h" + str(random.randint(1,self.num_terms))
 
 				while h_to_remove_from not in algorithm.h_term_lists.keys():
-					h_to_remove_from = f"h{random.randint(1,self.num_terms)}"
+					h_to_remove_from = "h" + str(random.randint(1,self.num_terms))
 
 				num_b = 0
 
@@ -484,12 +506,12 @@ class Matmul:
 			if self.verbose:
 				print("Mutation type: Add h to c")
 
-			h_to_add = f"h{random.randint(1,self.num_terms)}"
+			h_to_add = "h" + str(random.randint(1,self.num_terms))
 
 			while h_to_add not in algorithm.mult_algo.keys():
-				h_to_add = f"h{random.randint(1,self.num_terms)}"
+				h_to_add = "h" + str(random.randint(1,self.num_terms))
 
-			c_to_add_to = f"c{random.randint(1,self.mat_size[0])}{random.randint(1,self.mat_size[1])}"
+			c_to_add_to = "c" + str(random.randint(1,self.mat_size[0])) + str(random.randint(1,self.mat_size[1]))
 
 			if random.randint(0,1) == 1:
 				h_to_add = " - " + h_to_add
@@ -515,7 +537,7 @@ class Matmul:
 
 			while not valid:
 
-				c_to_remove_from = f"c{random.randint(1,self.mat_size[0])}{random.randint(1,self.mat_size[1])}"
+				c_to_remove_from = "c" + str(random.randint(1,self.mat_size[0])) + str(random.randint(1,self.mat_size[1]))
 				
 				if len(algorithm.c_term_lists[c_to_remove_from]) > 2:
 					valid = True
@@ -568,8 +590,8 @@ class Matmul:
 				if random_mutations:
 					f = open("LISAmutation1" + ".txt", "a")
 				else:
-					f = open(f"LISAmutation1{num_mutations}.txt", "a")
-				f.write(f"{gen},{self.algo.fitness_difference},{self.algo.fitness_cells}\n")
+					f = open("LISAmutation1" + str(num_mutations) + ".txt", "a")
+				f.write(str(gen) + "," + str(self.algo.fitness_difference) + "," + str(self.algo.fitness_cells) + "\n")
 				f.close()
 				print("Generation", gen)
 			new_algo = copy.deepcopy(self.algo)
