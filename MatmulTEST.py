@@ -545,6 +545,12 @@ class Matmul:
 	
 	def main(self, num_mutations, num_generations, term_size, num_runs, random_mutations = False):
 
+		self.algo = self.rand_algo(term_size, self.num_terms)
+
+		print(self.algo.h_term_lists['h1'])
+		print(self.algo.c_term_lists['c11'])
+
+	""""
 		for run in range(num_runs):
 			self.init_mats(self.num_triples)
 
@@ -624,16 +630,18 @@ class Matmul:
 			print("Final fitness difference: %.3f | Final fitness cells: %.2f" % (self.algo.fitness_difference,self.algo.fitness_cells))
 			print("Time: %.2f" % (time.time() - time_0))
 			print("Final number of h's: ", len(self.algo.h_term_lists.keys()))
-		
+
+
 			self.num_terms = self.start_terms
-		
+		"""
+
 if __name__ == "__main__":
 		
 	matmul = Matmul(5, cells_priority = False, verbose = False)
 	matmul.main(1, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(2, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(3, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(4, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(5, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(1, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=True)
+	#matmul.main(2, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	#matmul.main(3, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	#matmul.main(4, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	#matmul.main(5, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	#matmul.main(1, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=True)
 

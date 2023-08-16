@@ -2,16 +2,10 @@ import time
 
 time_0 = time.time()
 
-x = 1
-y = "h" + str(x)
-print(y)
+num = 1
 
-print("cast: ", time.time() - time_0)
+for x in range(100000000):
+    num +=1
 
-time_0 = time.time()
-
-x = 1
-y = f"h{x}"
-print(y)
-
-print("no cast:", time.time() - time_0)
+print("time: ", time.time() - time_0)
+print(num)
