@@ -326,6 +326,68 @@ fn one_sided_h(h_term_list: &Vec<String>) -> bool{
 
 }
 
+fn mutate(mut algo: Algorithm, term_size: u32, mut num_terms: usize) -> (Algorithm, usize){
+
+	/*
+	
+	Mutation types:
+	1: Add h
+	2: Remove h
+	3: Add (+/-)a to h
+	4: Add (+/-)b to h
+	5: Remove a from h
+	6: Remove b from h
+	7: Add (+/-)h to c
+	8: Remove h from c
+	
+	*/
+	
+	let mut rng = rand::thread_rng();
+	let mut mutation_type: usize = rng.gen_range(1..9);
+	
+	if mutation_type == 1{
+		
+		let mut h_to_add = String::from("h");
+		h_to_add.push_str((num_terms+1).to_string().as_str());
+		
+		let mut new_h_list = make_h_list(term_size);
+		let mut new_h = make_h(&new_h_list);
+		
+		algo.h_term_lists.insert(h_to_add, new_h_list);
+		algo.mult_algo.insert(h_to_add, new_h);
+		
+		//Also add this new h to one of the c's
+		
+		let mut row: usize = rng.gen_range(1..6);
+		let mut col: usize = rng.gen_range(1..6);
+		
+		let mut c_to_add_to = String::from("c");
+		c_to_add_to.push_str(row.to_string().as_str());
+		c_to_add_to.push_str(col.to_string().as_str());
+		
+		let mut random: usize = rng.gen_range(0..2);
+		let mut new_h_name = String::from(" - "); 
+		
+		if random == 0{ new_h_name.push_str(h_to_add.as_str());}
+		
+		algo.c_term_lists[&c_to_add_to].push(new_h_name);
+		algo.mult_algo.insert(c_to_add_to, make_c(&algo.c_term_lists[&c_to_add_to]));
+		
+		num_terms += 1;
+		
+	} else if mutation_type == 2{
+	} else if mutation_type == 3{
+	} else if mutation_type == 4{
+	} else if mutation_type == 5{
+	} else if mutation_type == 6{
+	} else if mutation_type == 7{
+	} else if mutation_type == 8{
+	}
+	
+	(algo, num_terms)
+
+}
+
 fn main() {
 	let args: Vec<String> = env::args().collect();
 	
