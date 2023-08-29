@@ -26,6 +26,7 @@ class Matmul:
 		self.verbose = verbose					#Toggle verbose mode for debugging
 		self.cells_priority = cells_priority	#Toggle cell priority mode, where cell fitness is prioritized
 		self.h_added = 0
+
 		
 	def init_mats(self, num_triples):
 		
@@ -191,6 +192,8 @@ class Matmul:
 		for x in range(self.mat_size[0]):
 			for y in range(self.mat_size[1]):
 				print(f"c{x+1}{y+1}: ", "(" + algo.mult_algo[f"c{x+1}{y+1}"] + ")")
+				
+#-----------------------------------------------------------------RUSTIFICATION LINE------------------------------------------------------------------------------#
 
 	def mutate(self, algorithm, term_size):
 
