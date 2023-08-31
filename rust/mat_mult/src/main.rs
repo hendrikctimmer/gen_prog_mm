@@ -13,8 +13,8 @@ struct Algorithm{
 	mult_algo: HashMap<String, String>,
 	h_term_lists: HashMap<String, Vec<String>>,
 	c_term_lists: HashMap<String, Vec<String>>,
-	solo_h_list_a: HashMap<String, String>,
-	solo_h_list_b: HashMap<String, String>,
+	solo_h_list_a: Vec<String>,
+	solo_h_list_b: Vec<String>,
 	solo_c_list: HashMap<String, String>,
 	fitness_cells: u32,
 	fitness_difference: u32,
@@ -98,8 +98,8 @@ fn rand_algo(term_size: u32, num_terms: usize, mat_size: (usize, usize)) -> Algo
 		mult_algo: HashMap::new(),
 		h_term_lists: HashMap::new(),
 		c_term_lists: HashMap::new(),
-		solo_h_list_a: HashMap::new(),
-		solo_h_list_b: HashMap::new(),
+		solo_h_list_a: [].to_vec(),
+		solo_h_list_b: [].to_vec(),
 		solo_c_list: HashMap::new(),
 		fitness_cells: 1000,
 		fitness_difference: 1000,
@@ -137,7 +137,7 @@ fn rand_algo(term_size: u32, num_terms: usize, mat_size: (usize, usize)) -> Algo
 	algo
 }
 
-fn print_algo(algo: Algorithm, num_terms: usize, mat_size: (usize, usize)){
+fn print_algo(algo: &Algorithm, num_terms: usize, mat_size: (usize, usize)){
 
 	println!("NUMTERMS: {}", num_terms);
 
@@ -145,9 +145,9 @@ fn print_algo(algo: Algorithm, num_terms: usize, mat_size: (usize, usize)){
 	
 		let mut term_name = String::from("h");
 		term_name.push_str(x.to_string().as_str());
-		
-		println!("{}: {}", term_name, algo.mult_algo[&term_name]);
-	
+		if algo.mult_algo.contains_key(&term_name){
+			println!("{}: {}", term_name, algo.mult_algo[&term_name]);
+		}
 	}
 	
 	println!("\n");
@@ -326,7 +326,7 @@ fn one_sided_h(h_term_list: &Vec<String>) -> bool{
 
 }
 
-fn mutate(mut algo: Algorithm, term_size: u32, mut num_terms: usize) -> (Algorithm, usize){
+fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_size: (usize, usize)) -> (&Algorithm, usize){
 
 	/*
 	
@@ -343,7 +343,8 @@ fn mutate(mut algo: Algorithm, term_size: u32, mut num_terms: usize) -> (Algorit
 	*/
 	
 	let mut rng = rand::thread_rng();
-	let mut mutation_type: usize = rng.gen_range(1..9);
+	let mut mutation_type: usize = 6;
+	//let mut mutation_type: usize = rng.gen_range(1..9);
 	
 	if mutation_type == 1{
 		
@@ -353,8 +354,8 @@ fn mutate(mut algo: Algorithm, term_size: u32, mut num_terms: usize) -> (Algorit
 		let mut new_h_list = make_h_list(term_size);
 		let mut new_h = make_h(&new_h_list);
 		
-		algo.h_term_lists.insert(h_to_add, new_h_list);
-		algo.mult_algo.insert(h_to_add, new_h);
+		algo.h_term_lists.insert(h_to_add.clone(), new_h_list);
+		algo.mult_algo.insert(h_to_add.clone(), new_h);
 		
 		//Also add this new h to one of the c's
 		
@@ -368,18 +369,299 @@ fn mutate(mut algo: Algorithm, term_size: u32, mut num_terms: usize) -> (Algorit
 		let mut random: usize = rng.gen_range(0..2);
 		let mut new_h_name = String::from(" - "); 
 		
-		if random == 0{ new_h_name.push_str(h_to_add.as_str());}
+		if random == 0{ new_h_name.push_str(h_to_add.as_str()); h_to_add = new_h_name.clone();}
 		
-		algo.c_term_lists[&c_to_add_to].push(new_h_name);
-		algo.mult_algo.insert(c_to_add_to, make_c(&algo.c_term_lists[&c_to_add_to]));
+		algo.c_term_lists.get_mut(&c_to_add_to).map(|val| val.push(h_to_add));
+		algo.mult_algo.insert(c_to_add_to.clone(), make_c(&algo.c_term_lists[&c_to_add_to]));
 		
 		num_terms += 1;
 		
 	} else if mutation_type == 2{
+	
+		let mut unremovable_list: Vec<String> = [].to_vec();
+		
+		for row in 1..(mat_size.0)+1{
+			for col in 1..(mat_size.1)+1{
+				let mut current_c = String::from("c");
+				current_c.push_str(row.to_string().as_str());
+				current_c.push_str(col.to_string().as_str());
+				if algo.c_term_lists[&current_c].len() == 1{
+					if algo.c_term_lists[&current_c][0].contains("-"){
+						unremovable_list.push(algo.c_term_lists[&current_c][0][3..].to_string());
+					} else {
+						unremovable_list.push(algo.c_term_lists[&current_c][0].clone());
+					}
+				} else {
+				
+					let mut count = 0;
+					
+					let mut h = &algo.c_term_lists[&current_c][0];
+					let mut neg_check = String::from(" - ");
+					neg_check.push_str(h.as_str());
+					
+					for x in 0..algo.c_term_lists[&current_c].len(){
+						
+						if &algo.c_term_lists[&current_c][x] == h || algo.c_term_lists[&current_c][x] == neg_check || algo.c_term_lists[&current_c][x] == neg_check[3..]{count +=1}
+					}
+					
+					if count == algo.c_term_lists[&current_c].len(){ unremovable_list.push(algo.c_term_lists[&current_c][0].replace(" - ",""))}
+				}
+			}
+		}
+		
+		let mut term_no = rng.gen_range(1..num_terms+1);
+		let mut h_to_remove = String::from("h");
+		h_to_remove.push_str(term_no.to_string().as_str());
+		
+		while !algo.mult_algo.contains_key(&h_to_remove) || unremovable_list.contains(&h_to_remove){
+			
+			if unremovable_list.len() == algo.h_term_lists.keys().len(){
+				return (algo, num_terms)
+			}	
+			term_no = rng.gen_range(1..num_terms+1);
+			let mut h_to_remove = String::from("h");
+			h_to_remove.push_str(term_no.to_string().as_str());
+		}
+		
+		println!("REMOVING: {}", h_to_remove);
+		
+		algo.mult_algo.remove(&h_to_remove);
+		algo.h_term_lists.remove(&h_to_remove);
+		if algo.solo_h_list_a.contains(&h_to_remove){
+			let mut index = algo.solo_h_list_a.iter().position(|x| *x == h_to_remove).unwrap();
+			algo.solo_h_list_a.remove(index);
+		}
+		if algo.solo_h_list_b.contains(&h_to_remove){
+			let mut index = algo.solo_h_list_b.iter().position(|x| *x == h_to_remove).unwrap();
+			algo.solo_h_list_b.remove(index);
+		}
+		
+		for row in 1..(mat_size.0)+1{
+			for col in 1..(mat_size.1)+1{
+				let mut current_c = String::from("c");
+				current_c.push_str(row.to_string().as_str());
+				current_c.push_str(col.to_string().as_str());
+				let mut neg_check = String::from(" - ");
+				neg_check.push_str(h_to_remove.as_str());
+				
+				if algo.c_term_lists[&current_c].contains(&h_to_remove){
+					println!("Removing from {}", &current_c);
+						
+					while algo.c_term_lists[&current_c].contains(&h_to_remove){
+						let mut index = algo.c_term_lists[&current_c].iter().position(|x| *x == h_to_remove).unwrap();
+						algo.c_term_lists.get_mut(&current_c).map(|val| val.remove(index));	
+					}
+					algo.mult_algo.insert(current_c.clone(), make_c(&algo.c_term_lists[&current_c]));
+				}
+				
+				if algo.c_term_lists[&current_c].contains(&neg_check){
+					println!("Removing from {}", &current_c);
+					
+					while algo.c_term_lists[&current_c].contains(&neg_check){
+						let mut index = algo.c_term_lists[&current_c].iter().position(|x| *x == neg_check).unwrap();
+						algo.c_term_lists.get_mut(&current_c).map(|val| val.remove(index));	
+					}
+					algo.mult_algo.insert(current_c.clone(), make_c(&algo.c_term_lists[&current_c]));
+				}
+			}
+		}
 	} else if mutation_type == 3{
+	
+		let mut random = rng.gen_range(0..2);
+		let mut a_to_add = String::from("");
+		
+		if random == 0{ a_to_add.push_str(" - ")}
+		a_to_add.push('a');
+		
+		let mut row = rng.gen_range(1..6);
+		let mut col = rng.gen_range(1..6);
+		
+		a_to_add.push_str(row.to_string().as_str());
+		a_to_add.push_str(col.to_string().as_str());
+		
+		let mut h_no = rng.gen_range(1..num_terms+1);
+	
+		let mut h_to_add_to = String::from("h");
+		h_to_add_to.push_str(h_no.to_string().as_str());
+		
+		while !algo.mult_algo.contains_key(&h_to_add_to){
+			let mut h_no = rng.gen_range(1..num_terms+1);
+	
+			h_to_add_to = String::from("h");
+			h_to_add_to.push_str(h_no.to_string().as_str());
+		}
+		
+		println!("ADDING {} TO: {}", a_to_add, h_to_add_to);
+		
+		
+		algo.h_term_lists.get_mut(&h_to_add_to).map(|val| val.push(a_to_add));
+		
+		println!("{:?}", algo.h_term_lists[&h_to_add_to]);
+		
+		algo.mult_algo.insert(h_to_add_to.clone(), make_h(&algo.h_term_lists[&h_to_add_to]));
+		
+		if algo.solo_h_list_a.contains(&h_to_add_to){
+			let mut index = algo.solo_h_list_a.iter().position(|x| *x == h_to_add_to).unwrap();
+			algo.solo_h_list_a.remove(index);
+		}
+	
 	} else if mutation_type == 4{
+	
+		let mut random = rng.gen_range(0..2);
+		let mut b_to_add = String::from("");
+		
+		if random == 0{ b_to_add.push_str(" - ")}
+		b_to_add.push('b');
+		
+		let mut row = rng.gen_range(1..6);
+		let mut col = rng.gen_range(1..6);
+		
+		b_to_add.push_str(row.to_string().as_str());
+		b_to_add.push_str(col.to_string().as_str());
+		
+		let mut h_no = rng.gen_range(1..num_terms+1);
+	
+		let mut h_to_add_to = String::from("h");
+		h_to_add_to.push_str(h_no.to_string().as_str());
+		
+		while !algo.mult_algo.contains_key(&h_to_add_to){
+			let mut h_no = rng.gen_range(1..num_terms+1);
+	
+			h_to_add_to = String::from("h");
+			h_to_add_to.push_str(h_no.to_string().as_str());
+		}
+		
+		println!("ADDING {} TO: {}", b_to_add, h_to_add_to);
+		
+		algo.h_term_lists.get_mut(&h_to_add_to).map(|val| val.push(b_to_add));
+		
+		println!("{:?}", algo.h_term_lists[&h_to_add_to]);
+		
+		algo.mult_algo.insert(h_to_add_to.clone(), make_h(&algo.h_term_lists[&h_to_add_to]));
+		
+		if algo.solo_h_list_b.contains(&h_to_add_to){
+			let mut index = algo.solo_h_list_b.iter().position(|x| *x == h_to_add_to).unwrap();
+			algo.solo_h_list_b.remove(index);
+		}
+	
 	} else if mutation_type == 5{
+	
+		let mut h_to_remove_from = String::from("");
+		let mut valid = false;
+		
+		while !valid{
+		
+			h_to_remove_from.push('h');
+			let mut h_no = rng.gen_range(1..num_terms+1);
+			h_to_remove_from.push_str(h_no.to_string().as_str());
+			
+			while !algo.mult_algo.contains_key(&h_to_remove_from){
+				let mut h = String::from("h");
+				let mut h_no = rng.gen_range(1..num_terms+1);
+				h_to_remove_from.push_str(h_no.to_string().as_str());
+			}
+			
+			let mut num_a = 0;
+		
+			for term in 0..algo.h_term_lists[&h_to_remove_from].len(){
+			
+				if algo.h_term_lists[&h_to_remove_from][term].contains("a"){
+					num_a +=1;
+					
+				}
+				
+				if num_a > 1{
+					valid = true;
+				} else if !algo.solo_h_list_a.contains(&h_to_remove_from){
+					algo.solo_h_list_a.push(h_to_remove_from.clone());
+				}
+				
+				if algo.solo_h_list_a.len() == algo.h_term_lists.keys().len(){
+					return (algo, num_terms)
+				}
+			
+			}
+		
+		}
+		
+		let mut a_terms = [].to_vec();
+		
+		for x in 0..algo.h_term_lists[&h_to_remove_from].len(){
+		
+			if algo.h_term_lists[&h_to_remove_from][x].contains("a"){
+				a_terms.push(&algo.h_term_lists[&h_to_remove_from][x]);
+			}
+		}
+		
+		let mut picked_term_i = rng.gen_range(0..a_terms.len());
+		let mut picked_term = String::from(a_terms[picked_term_i]);
+		
+		println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
+		
+		let mut index = algo.h_term_lists[&h_to_remove_from].iter().position(|x| *x == picked_term).unwrap();
+		algo.h_term_lists.get_mut(&h_to_remove_from).map(|val| val.remove(index));
+		
+		algo.mult_algo.insert(h_to_remove_from.clone(), make_h(&algo.h_term_lists[&h_to_remove_from]));
+		
 	} else if mutation_type == 6{
+	
+		let mut h_to_remove_from = String::from("");
+		let mut valid = false;
+		
+		while !valid{
+		
+			h_to_remove_from.push('h');
+			let mut h_no = rng.gen_range(1..num_terms+1);
+			h_to_remove_from.push_str(h_no.to_string().as_str());
+			
+			while !algo.mult_algo.contains_key(&h_to_remove_from){
+				let mut h = String::from("h");
+				let mut h_no = rng.gen_range(1..num_terms+1);
+				h_to_remove_from.push_str(h_no.to_string().as_str());
+			}
+			
+			let mut num_b = 0;
+		
+			for term in 0..algo.h_term_lists[&h_to_remove_from].len(){
+			
+				if algo.h_term_lists[&h_to_remove_from][term].contains("b"){
+					num_b +=1;
+					
+				}
+				
+				if num_b > 1{
+					valid = true;
+				} else if !algo.solo_h_list_b.contains(&h_to_remove_from){
+					algo.solo_h_list_b.push(h_to_remove_from.clone());
+				}
+				
+				if algo.solo_h_list_b.len() == algo.h_term_lists.keys().len(){
+					return (algo, num_terms)
+				}
+			
+			}
+		
+		}
+		
+		let mut b_terms = [].to_vec();
+		
+		for x in 0..algo.h_term_lists[&h_to_remove_from].len(){
+		
+			if algo.h_term_lists[&h_to_remove_from][x].contains("b"){
+				b_terms.push(&algo.h_term_lists[&h_to_remove_from][x]);
+			}
+		}
+		
+		let mut picked_term_i = rng.gen_range(0..b_terms.len());
+		let mut picked_term = String::from(b_terms[picked_term_i]);
+		
+		println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
+		
+		let mut index = algo.h_term_lists[&h_to_remove_from].iter().position(|x| *x == picked_term).unwrap();
+		algo.h_term_lists.get_mut(&h_to_remove_from).map(|val| val.remove(index));
+		
+		algo.mult_algo.insert(h_to_remove_from.clone(), make_h(&algo.h_term_lists[&h_to_remove_from]));	
+	
 	} else if mutation_type == 7{
 	} else if mutation_type == 8{
 	}
@@ -434,11 +716,29 @@ fn main() {
 	//init_mats(&mut Matmult.mat_triples, Matmult.num_triples, Matmult.mat_size);
 	//make_h(&make_h_list(Matmult.MEDIUM));
 	//make_c(&make_c_list(Matmult.MEDIUM, Matmult.num_terms));
-	print_algo(algo, Matmult.num_terms, Matmult.mat_size);
 	
-	let mut stringy = String::from("1 2 3 4 5");
-	//stringy = stringy[0..2].to_string();
-	stringy = stringy.replacen(" ", "", 1);
+	//print_algo(&algo, Matmult.num_terms, Matmult.mat_size);
 	
+	let res = mutate(&mut algo, Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size);
+	Matmult.num_terms = res.1;
 	
-}
+	print_algo(&algo, Matmult.num_terms, Matmult.mat_size);
+
+	
+	let mut stringy = String::from("abcdef");
+	stringy = stringy[..3].to_string();
+	//println!("{}", stringy);
+	//stringy = stringy.replacen(" ", "", 1);
+	
+	let mut testmap: HashMap::<String, String> = HashMap::new();
+	let mut testvec = [].to_vec();
+	
+	testvec.push("a");
+	testvec.push("b");
+	testvec.push("d");
+
+	let mut index = testvec.iter().position(|&x| x == "c");
+	if index == None{
+		println!("ye");
+	} else { println!("{}", index.unwrap()); }
+} 
