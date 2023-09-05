@@ -223,6 +223,7 @@ class Matmul:
 
 			new_h_list = self.make_h_list(term_size)
 			new_h = self.make_h(new_h_list)
+			
 			algorithm.h_term_lists[f"h{self.num_terms+1}"] = new_h_list
 			algorithm.mult_algo[f"h{self.num_terms+1}"] = new_h
 
@@ -282,6 +283,7 @@ class Matmul:
 			unremovable_h_list = dict.fromkeys(unremovable_h_list)
 
 			while h_to_remove not in algorithm.mult_algo.keys() or h_to_remove in unremovable_h_list:
+			
 				if len(unremovable_h_list) == len(algorithm.h_term_lists.keys()):
 					return algorithm
 				h_to_remove = f"h{random.randint(1,self.num_terms)}"
@@ -632,11 +634,11 @@ class Matmul:
 		
 if __name__ == "__main__":
 		
-	matmul = Matmul(5, cells_priority = False, verbose = False)
-	matmul.main(1, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(2, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(3, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(4, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(5, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
-	matmul.main(1, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=True)
+	matmul = Matmul(30, cells_priority = False, verbose = False)
+	matmul.main(1, 1000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	#matmul.main(2, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	#matmul.main(3, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	#matmul.main(4, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	#matmul.main(5, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	#matmul.main(1, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=True)
 

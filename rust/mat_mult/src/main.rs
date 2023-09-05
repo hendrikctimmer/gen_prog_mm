@@ -54,9 +54,8 @@ fn init_mats(mut mat_trips: &mut Vec<(matrix::prelude::Compressed<i32>,matrix::p
 				m1.set((x,y), rng.gen_range(-10..11));
 				m2.set((x,y), rng.gen_range(-10..11));
 			}	
-			//println!("{} {} {} {} {}", m1.get((x,0)), m1.get((x,1)), m1.get((x,2)), m1.get((x,3)), m1.get((x,4)))
 		}
-		
+	
 		for x in 0..mat_x{
 			for y in 0..mat_x{
 			
@@ -65,16 +64,131 @@ fn init_mats(mut mat_trips: &mut Vec<(matrix::prelude::Compressed<i32>,matrix::p
 				for z in 0..mat_y{
 					
 					current += m1.get((x,z)) * m2.get((z,y));
-				
 				}
 				m3.set((x,y), current);
 			}	
 		}
-		
-		
 		mat_trips.push((m1.clone(),m2.clone(),m3.clone()));
 	}
 }	
+
+fn eval_h(algo: &Algorithm, mat_triple: &(matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>), num_terms: usize, term_size: u32, mat_size: (usize, usize)) -> HashMap<String, i32>{
+
+	let mut res = HashMap::new(); //The result hashmap
+	
+	for h in algo.h_term_lists.keys(){ //Iterate through all h-terms
+		
+		let mut a_res = 0;
+		let mut b_res = 0;
+				
+		let mut a_vec = [].to_vec();
+		let mut a_int_vec: Vec<i32> = [].to_vec();
+		let mut b_vec = [].to_vec();
+		let mut b_int_vec:  Vec<i32>  = [].to_vec();
+		
+		let mut h_int = &algo.mult_algo[h]; //Retrieve the equation for the h-term
+			
+		for term in &algo.h_term_lists[h]{ //Iterate through all terms in the equation and replace with corresponding int
+			
+			let mut negative = false;
+			let mut read_term = term.clone();
+				
+			if term.contains("-"){ negative = true; }
+			
+			read_term = read_term.replace(" - ", "");
+			let x_coord = read_term[1..2].to_string().parse::<usize>().unwrap()-1;
+			let y_coord = read_term[2..3].to_string().parse::<usize>().unwrap()-1;
+				
+			if term.contains("a"){ 
+				a_vec.push(read_term);
+				if negative{
+					a_int_vec.push( (mat_triple.0.get((x_coord, y_coord))) - (2*(mat_triple.0.get((x_coord, y_coord)))))
+				} else {
+					a_int_vec.push( mat_triple.0.get((x_coord, y_coord)))
+				}
+			} else if term.contains("b"){ 
+				b_vec.push(read_term);
+
+				if negative{
+					b_int_vec.push( (mat_triple.1.get((x_coord, y_coord))) - (2*(mat_triple.1.get((x_coord, y_coord)))))
+				} else {
+					b_int_vec.push( mat_triple.1.get((x_coord, y_coord)))
+				}
+			}
+		}
+		a_res = a_int_vec.iter().sum();
+		b_res = b_int_vec.iter().sum();
+		res.insert(h.clone(), a_res*b_res);
+		
+	}
+	res
+}
+
+fn get_fitness(algo: &Algorithm, matmult: &MatMult, mat_triples: &Vec<(matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>)>, num_terms: usize, term_size: u32, mat_size: (usize, usize)) -> (i32, usize){
+
+	let mut fitness_difference = 0;
+	let mut fitness_difference_final = 0;
+	let mut fitness_cells = 0;
+	let mut res_map: HashMap<String, i32> = HashMap::new();
+	let mut mat_triples = &matmult.mat_triples;
+	let mut num_terms = matmult.num_terms;
+	let mut term_size = matmult.MEDIUM;
+	let mut mat_size = matmult.mat_size;
+	
+	
+	//println!("lets see {:?}", algo.c_term_lists["c11"]);
+	
+	for x in 0..mat_triples.len(){
+	
+		let mut h_int_map = eval_h(&algo, &mat_triples[x], num_terms, term_size, mat_size);
+	
+		for row in 1..mat_size.0+1{
+			for col in 1..mat_size.1+1{
+			
+				fitness_difference = 0;
+			
+				let mut current_c = String::from("c");
+				current_c.push_str(row.to_string().as_str());
+				current_c.push_str(col.to_string().as_str());
+				
+				let mut res = 0;
+				let mut h_int_vec = [].to_vec();
+				
+				for term in &algo.c_term_lists[&current_c]{
+				
+					let mut read_term = term.clone();
+					let mut negative = false;
+					
+					if read_term.contains("-") { negative = true }
+					
+					read_term = read_term.replace(" - ", "");
+					
+					if negative{
+						h_int_vec.push(h_int_map[&read_term] - 2*h_int_map[&read_term])
+					} else {
+						h_int_vec.push(h_int_map[&read_term])
+					}	
+				}
+				res = h_int_vec.iter().sum();
+				
+				//println!("here {} {}", res, mat_triple.2.get((row-1,col-1)));
+				
+				if res != mat_triples[x].2.get((row-1, col-1)){
+
+					fitness_difference += (mat_triples[x].2.get((row-1,col-1)) - res).abs();
+					fitness_cells += 1
+				}
+			}
+		}	
+		fitness_difference /= 25;
+		fitness_difference_final += fitness_difference;
+
+	}
+	fitness_cells /= mat_triples.len();
+	
+	(fitness_difference_final, fitness_cells)
+
+}
 
 fn print_mats(mat_trip: &(matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>)){
 
@@ -372,7 +486,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		
 		if random == 0{ new_h_name.push_str(h_to_add.as_str()); h_to_add = new_h_name.clone();}
 		
-		println!("Adding {} to {}", h_to_add, c_to_add_to);
+		//println!("Adding {}", h_to_add);
 		
 		algo.c_term_lists.get_mut(&c_to_add_to).map(|val| val.push(h_to_add));
 		algo.mult_algo.insert(c_to_add_to.clone(), make_c(&algo.c_term_lists[&c_to_add_to]));
@@ -382,21 +496,23 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 	} else if mutation_type == 2{
 	
 		let mut unremovable_list: Vec<String> = [].to_vec();
+		let mut used_h_list: Vec<String> = [].to_vec();
 		
-		println!("MUT 2");
+		//println!("MUT 2");
 		
 		for row in 1..(mat_size.0)+1{
 			for col in 1..(mat_size.1)+1{
 				let mut current_c = String::from("c");
 				current_c.push_str(row.to_string().as_str());
 				current_c.push_str(col.to_string().as_str());
+				for h in &algo.c_term_lists[&current_c]{ if !used_h_list.contains(&h){ used_h_list.push(h.to_string())}}
 				if algo.c_term_lists[&current_c].len() == 1{
-					if algo.c_term_lists[&current_c][0].contains("-"){
+					if algo.c_term_lists[&current_c][0].contains("-") && !unremovable_list.contains(&algo.c_term_lists[&current_c][0][3..].to_string()){
 						unremovable_list.push(algo.c_term_lists[&current_c][0][3..].to_string());
-						println!("{} is unremovable because of {:?}", algo.c_term_lists[&current_c][0], algo.c_term_lists[&current_c]);
-					} else {
+						//println!("{} is unremovable because of {:?}", algo.c_term_lists[&current_c][0], algo.c_term_lists[&current_c]);
+					} else if !algo.c_term_lists[&current_c][0].contains("-") && !unremovable_list.contains(&algo.c_term_lists[&current_c][0]){
 						unremovable_list.push(algo.c_term_lists[&current_c][0].clone());
-						println!("{} is unremovable because of {:?}", algo.c_term_lists[&current_c][0], algo.c_term_lists[&current_c]);
+						//println!("{} is unremovable because of {:?}", algo.c_term_lists[&current_c][0], algo.c_term_lists[&current_c]);
 					}
 				} else {
 				
@@ -411,7 +527,8 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 						if &algo.c_term_lists[&current_c][x] == h || algo.c_term_lists[&current_c][x] == neg_check{count +=1}
 					}
 					
-					if count == algo.c_term_lists[&current_c].len(){ unremovable_list.push(algo.c_term_lists[&current_c][0].replace(" - ","")); println!("{} is unremovable because of {:?}", algo.c_term_lists[&current_c][0], algo.c_term_lists[&current_c]);}
+					if count == algo.c_term_lists[&current_c].len() && !unremovable_list.contains(h){ unremovable_list.push(h.to_string()); /*println!("{} is unremovable because of {:?}", algo.c_term_lists[&current_c][0], algo.c_term_lists[&current_c]);*/}
+					
 					//println!("for {}, length is {}, count is {}", h, algo.c_term_lists[&current_c].len(), count );
 					//println!("heres the list: {:?}", algo.c_term_lists[&current_c]);
 				}
@@ -421,21 +538,13 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		let mut term_index = rng.gen_range(0..algo.h_term_lists.keys().len());
 		let keys: Vec<&str> = algo.h_term_lists.keys().map(|k| k.as_str()).collect();
 		let mut h_to_remove = keys[term_index].to_string();
-		let mut max = 0;
 		
 		while !algo.mult_algo.contains_key(&h_to_remove) || unremovable_list.contains(&h_to_remove){
 			
-			max +=1;
-			
-			if max > 1000{
-				println!("chimp");
-				
-			}
-			
-			if unremovable_list.len() == algo.h_term_lists.keys().len(){
+			if unremovable_list.len() == keys.len(){
 				return (algo, num_terms)
 			}	
-			if unremovable_list.contains(&h_to_remove){ println!("UNREMOVABLE: {}", h_to_remove); }
+			//if unremovable_list.contains(&h_to_remove){ println!("UNREMOVABLE: {} \n, key {:?} \n, unremovable {:?}", h_to_remove, keys, unremovable_list); }
 
 			term_index = rng.gen_range(0..algo.h_term_lists.keys().len());
 			h_to_remove = keys[term_index].to_string();
@@ -443,7 +552,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 
 		}
 		
-		println!("REMOVING: {}", h_to_remove);
+		//println!("REMOVING: {}", h_to_remove);
 		
 		
 		algo.mult_algo.remove(&h_to_remove);
@@ -466,7 +575,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 				neg_check.push_str(h_to_remove.as_str());
 				
 				if algo.c_term_lists[&current_c].contains(&h_to_remove){
-					println!("Removing from {}", &current_c);
+					//println!("Removing {} from {}: {:?}", &h_to_remove, &current_c, algo.c_term_lists[&current_c]);
 					//println!("{:?}", algo.c_term_lists[&current_c]);
 						
 					while algo.c_term_lists[&current_c].contains(&h_to_remove){
@@ -515,7 +624,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 			h_to_add_to.push_str(h_no.to_string().as_str());
 		}
 		
-		println!("ADDING {} TO: {}", a_to_add, h_to_add_to);
+		//println!("ADDING {} TO: {}", a_to_add, h_to_add_to);
 		
 		
 		algo.h_term_lists.get_mut(&h_to_add_to).map(|val| val.push(a_to_add));
@@ -553,7 +662,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 			h_to_add_to.push_str(h_no.to_string().as_str());
 		}
 		
-		println!("ADDING {} TO: {}", b_to_add, h_to_add_to);
+		//println!("ADDING {} TO: {}", b_to_add, h_to_add_to);
 		
 		algo.h_term_lists.get_mut(&h_to_add_to).map(|val| val.push(b_to_add));
 		
@@ -616,7 +725,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		let mut picked_term_i = rng.gen_range(0..a_terms.len());
 		let mut picked_term = String::from(a_terms[picked_term_i]);
 		
-		println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
+		//println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
 		
 		let mut index = algo.h_term_lists[&h_to_remove_from].iter().position(|x| *x == picked_term).unwrap();
 		algo.h_term_lists.get_mut(&h_to_remove_from).map(|val| val.remove(index));
@@ -675,7 +784,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		let mut picked_term_i = rng.gen_range(0..b_terms.len());
 		let mut picked_term = String::from(b_terms[picked_term_i]);
 		
-		println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
+		//println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
 		
 		let mut index = algo.h_term_lists[&h_to_remove_from].iter().position(|x| *x == picked_term).unwrap();
 		algo.h_term_lists.get_mut(&h_to_remove_from).map(|val| val.remove(index));
@@ -706,7 +815,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		c_to_add_to.push_str(row.to_string().as_str());
 		c_to_add_to.push_str(col.to_string().as_str());
 		
-		println!("Adding {} to {}", h_to_add, c_to_add_to);
+		//println!("Adding {} to {}", h_to_add, c_to_add_to);
 		
 		algo.c_term_lists.get_mut(&c_to_add_to).map(|val| val.push(h_to_add));
 		algo.mult_algo.insert(c_to_add_to.clone(), make_c(&algo.c_term_lists[&c_to_add_to]));
@@ -731,8 +840,6 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 			algo.solo_c_list.push(c_to_remove_from.clone());
 		}
 		
-		println!("solo list {}, term list {}", algo.solo_c_list.len(), algo.c_term_lists.keys().len());
-		
 		if algo.solo_c_list.len() == algo.c_term_lists.keys().len(){
 			return (algo, num_terms);
 		}
@@ -742,7 +849,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 	let mut picked_term_i = rng.gen_range(0..algo.c_term_lists[&c_to_remove_from].len());
 	let mut picked_term = &algo.c_term_lists[&c_to_remove_from][picked_term_i];
 	
-	println!("Removing {} from {}", picked_term, c_to_remove_from);
+	//println!("Removing {} from {}", picked_term, c_to_remove_from);
 	
 	let mut index = algo.c_term_lists[&c_to_remove_from].iter().position(|x| x == picked_term).unwrap();
 	algo.c_term_lists.get_mut(&c_to_remove_from).map(|val| val.remove(index));
@@ -779,56 +886,25 @@ fn main() {
 		h_added: 0,		
 	};
 	
-
-	
-	//algo.mult_algo.insert("Key".to_string(),"Value".to_string());
-
-
-	//println!("Value of Key: {}", algo.mult_algo["Key"]);
-	
 	Matmult.start_terms = Matmult.mat_size.0 * Matmult.mat_size.0 * Matmult.mat_size.1; // Init start_terms
 	Matmult.num_terms = Matmult.start_terms; 					    // Init num_terms
-	Matmult.num_triples = 5;							    // Init num_triples	
+	Matmult.num_triples = 30;							    // Init num_triples	
 	
+	init_mats(&mut Matmult.mat_triples, Matmult.num_triples, Matmult.mat_size);
 	let mut algo = rand_algo(Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size);
+	let (mut fitness_difference, mut fitness_cells) = (0,0);
 	
-	println!("Matrix size: {:?}", Matmult.mat_size); // :? operator within {} prints an array's (or vector's apparently) elements
-	
-	println!("Number of Arguments: {}", &args.len()-1);
-	
-	println!("Testing multiple prints of tuple: {} {} {:?}", Matmult.mat_size.0, Matmult.mat_size.1, Matmult.mat_size);
-	
-	//init_mats(&mut Matmult.mat_triples, Matmult.num_triples, Matmult.mat_size);
-	//make_h(&make_h_list(Matmult.MEDIUM));
-	//make_c(&make_c_list(Matmult.MEDIUM, Matmult.num_terms));
-	
-	//print_algo(&algo, Matmult.num_terms, Matmult.mat_size);
-	
-	for x in 0..1000000{
+	for x in 0..10000{
+		if x % 100 == 0{println!("Mutation {}", x);}
 		let res = mutate(&mut algo, Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size);
 		Matmult.num_terms = res.1;
-
+		
+		(fitness_difference, fitness_cells) = get_fitness(&algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
 	}
-	
 	print_algo(&algo, Matmult.num_terms, Matmult.mat_size);
 	
-	let mut stringy = String::from("abcdef");
-	stringy = stringy[..3].to_string();
-	//println!("{}", stringy);
-	//stringy = stringy.replacen(" ", "", 1);
 	
-	let mut testmap: HashMap::<String, String> = HashMap::new();
-	let mut testvec = [].to_vec();
 	
-	testvec.push("a");
-	testvec.push("b");
-	testvec.push("d");
-	
-	println!("actual number of terms: {}", algo.h_term_lists.keys().len());
-
-	/*let mut index = testvec.iter().position(|&x| x == "c");
-	if index == None{
-		println!("ye");
-	} else { println!("{}", index.unwrap()); }*/
-	
+	println!("fit_diff {}", fitness_difference);
+	println!("fit_cells {}", fitness_cells);
 } 
