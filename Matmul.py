@@ -635,7 +635,7 @@ class Matmul:
 if __name__ == "__main__":
 		
 	matmul = Matmul(30, cells_priority = False, verbose = False)
-	matmul.main(1, 1000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
+	matmul.main(1, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
 	#matmul.main(2, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
 	#matmul.main(3, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)
 	#matmul.main(4, 1000000, term_size=matmul.MEDIUM, num_runs=5, random_mutations=False)

@@ -6,6 +6,8 @@
 extern crate rand;
 extern crate matrix;
 
+use std::fs::File;
+use std::io::prelude::*;
 use rand::Rng;
 use matrix::prelude::*;
 
@@ -27,6 +29,9 @@ struct Algorithm{
 	solo_c_list: Vec<String>,
 	fitness_cells: u32,
 	fitness_difference: u32,
+	num_h: usize,
+	h_cap: bool,
+	max_h: usize,
 }
 
 struct MatMult{
@@ -41,6 +46,7 @@ struct MatMult{
 	verbose: bool,
 	cells_priority: bool,
 	h_added: u32,
+	num_generations: usize,
 }
 
 /*This method initializes the number of triples of matrices (A,B,C) specified, such that in each triple A * B = C.*/
@@ -83,7 +89,7 @@ fn init_mats(mut mat_trips: &mut Vec<(matrix::prelude::Compressed<i32>,matrix::p
 }	
 
 /*This method reads in the int_map of a triple of matrices, and evaluates a single specified c-term to its integer value.*/
-fn eval_single_c(int_map: &mut HashMap<String, i32>, c_list: Vec<String>, c_key: String){
+fn eval_single_c(int_map: &mut HashMap<String, i32>, c_list: Vec<String>, c_key: &String){
 	
 	let mut res = 0;
 	let mut h_int_vec = [].to_vec();
@@ -104,7 +110,7 @@ fn eval_single_c(int_map: &mut HashMap<String, i32>, c_list: Vec<String>, c_key:
 		}	
 	}
 	res = h_int_vec.iter().sum();
-	int_map.insert(c_key, res);	
+	int_map.insert(c_key.to_string(), res);	
 		
 }
 
@@ -172,7 +178,7 @@ fn init_maps(mut algo: &mut Algorithm, matmult: &MatMult, mat_triples: &Vec<(mat
 		
 		for c in algo.c_term_lists.keys(){
 			
-				eval_single_c(&mut algo.int_maps[mat_triple], algo.c_term_lists[c].clone(), c.to_string());
+				eval_single_c(&mut algo.int_maps[mat_triple], algo.c_term_lists[c].clone(), &c.to_string());
 		}
 		
 	}
@@ -180,7 +186,7 @@ fn init_maps(mut algo: &mut Algorithm, matmult: &MatMult, mat_triples: &Vec<(mat
 }
 
 /*This method updates each int_map, based on the vector keys, which contains a list of h-terms or c-terms whose expressions have been mutated.*/
-fn update_maps(algo: &mut Algorithm, new_algo: &Algorithm, mat_triples: &Vec<(matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>)>, num_terms: usize, term_size: u32, mat_size: (usize, usize), keys: Vec<String>){
+fn update_maps(algo: &mut Algorithm, mat_triples: &Vec<(matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>)>, num_terms: usize, term_size: u32, mat_size: (usize, usize), keys: Vec<String>){
 
 	for mat_triple in 0..mat_triples.len(){
 	
@@ -188,11 +194,33 @@ fn update_maps(algo: &mut Algorithm, new_algo: &Algorithm, mat_triples: &Vec<(ma
 		
 			if key.contains("h"){
 			
+				//println!("Re-evaluating {} to {:?}", key, algo.h_term_lists[key]);
 				eval_single_h(&mut algo.int_maps[mat_triple], algo.h_term_lists[key].clone(), key.to_string(), mat_triples[mat_triple].clone());
+				
+				for row in 1..mat_size.0+1{
+					for col in 1..mat_size.1+1{
+						let mut current_c = String::from("c");
+						current_c.push_str(row.to_string().as_str());
+						current_c.push_str(col.to_string().as_str());
+						
+						let mut negative = String::from(" - ");
+						negative.push_str(&current_c);
+						
+						for term in &algo.c_term_lists[&current_c]{
+							
+							if term == &current_c || term == &negative{
+								//println!("Re-evaluating {} to {:?}", &current_c, algo.c_term_lists[&current_c]);
+								eval_single_c(&mut algo.int_maps[mat_triple], algo.c_term_lists[&current_c].clone(), &current_c);
+							}							
+						}
+					}
+				}
+					
 			
 			} else if key.contains("c"){
 			
-				eval_single_c(&mut algo.int_maps[mat_triple], algo.c_term_lists[key].clone(), key.to_string());
+				//println!("Re-evaluating {} to {:?}", key, algo.c_term_lists[key]);
+				eval_single_c(&mut algo.int_maps[mat_triple], algo.c_term_lists[key].clone(), &key.to_string());
 			
 			}
 		
@@ -205,7 +233,7 @@ fn update_maps(algo: &mut Algorithm, new_algo: &Algorithm, mat_triples: &Vec<(ma
 }
 
 /*This method calculates the fitness of the MM algorithm by evaluating it on each of the number of specified triples of matrices. Both average cell difference and number of incorrect cells is returned.*/
-fn get_fitness(mut algo: &mut Algorithm, new_algo: &Algorithm, matmult: &MatMult, mat_triples: &Vec<(matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>)>, num_terms: usize, term_size: u32, mat_size: (usize, usize)) -> (f64, f64){
+fn get_fitness(mut algo: &mut Algorithm, matmult: &MatMult, mat_triples: &Vec<(matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>,matrix::prelude::Compressed<i32>)>, num_terms: usize, term_size: u32, mat_size: (usize, usize)) -> (f64, f64){
 
 	let mut fitness_difference: f64 = 0.0;
 	let mut fitness_difference_final: f64 = 0.0;
@@ -266,17 +294,17 @@ fn print_mat3_algo(algo: &Algorithm){
 		c1.push_str(row.to_string().as_str());
 		c1.push_str(1.to_string().as_str());
 		let mut c2 = String::from("c");
-		c1.push_str(row.to_string().as_str());
-		c1.push_str(2.to_string().as_str());
+		c2.push_str(row.to_string().as_str());
+		c2.push_str(2.to_string().as_str());
 		let mut c3 = String::from("c");
-		c1.push_str(row.to_string().as_str());
-		c1.push_str(3.to_string().as_str());
+		c3.push_str(row.to_string().as_str());
+		c3.push_str(3.to_string().as_str());
 		let mut c4 = String::from("c");
-		c1.push_str(row.to_string().as_str());
-		c1.push_str(4.to_string().as_str());
+		c4.push_str(row.to_string().as_str());
+		c4.push_str(4.to_string().as_str());
 		let mut c5 = String::from("c");
-		c1.push_str(row.to_string().as_str());
-		c1.push_str(5.to_string().as_str());
+		c5.push_str(row.to_string().as_str());
+		c5.push_str(5.to_string().as_str());
 		println!("{} {} {} {} {}", algo.int_maps[0][&c1],algo.int_maps[0][&c2],algo.int_maps[0][&c3],algo.int_maps[0][&c4],algo.int_maps[0][&c5]);
 	}
 }
@@ -295,6 +323,9 @@ fn rand_algo(term_size: u32, num_terms: usize, mat_size: (usize, usize)) -> Algo
 		solo_c_list: [].to_vec(),
 		fitness_cells: 1000,
 		fitness_difference: 1000,
+		num_h: 0,
+		h_cap: false,
+		max_h: 2*num_terms,
 	};
 	
 	for x in 1..num_terms+1{
@@ -353,6 +384,33 @@ fn print_algo(algo: &Algorithm, num_terms: usize, mat_size: (usize, usize)){
 				term_name.push_str(y.to_string().as_str());
 				
 				println!("{}: {}", term_name, algo.mult_algo[&term_name]);
+		
+		}
+	}
+
+}
+
+fn print_int_maps(algo: &Algorithm, num_terms: usize, mat_size: (usize, usize)){
+
+	for x in 1..num_terms+1{
+	
+		let mut term_name = String::from("h");
+		term_name.push_str(x.to_string().as_str());
+		if algo.mult_algo.contains_key(&term_name){
+			println!("{}: {}", term_name, algo.int_maps[0][&term_name]);
+		}
+	}
+	
+	println!("\n");
+	
+	for x in 1..mat_size.0+1{
+		for y in 1..mat_size.1+1{
+		
+				let mut term_name = String::from("c");
+				term_name.push_str(x.to_string().as_str());
+				term_name.push_str(y.to_string().as_str());
+				
+				println!("{}: {}", term_name, algo.int_maps[0][&term_name]);
 		
 		}
 	}
@@ -528,7 +586,7 @@ fn one_sided_h(h_term_list: &Vec<String>) -> bool{
 
 
 /*This method randomly picks one of the 8 possible mutations and carries it out on the current MM algorithm.*/
-fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_size: (usize, usize), num_triples: usize) -> (&Algorithm, usize, usize, bool, Vec<String>){
+fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_size: (usize, usize), num_triples: usize, verbose: bool) -> (&Algorithm, usize, usize, bool, Vec<String>){
 
 	/*
 	
@@ -552,6 +610,12 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 	let mut keys = [].to_vec();
 	
 	if mutation_type == 1{ //Create a new h-term and add it to a random c-term
+	
+		if algo.num_h == algo.max_h {
+		
+			return (algo, num_terms, mutation_type, no_mutate, keys)
+		
+		}
 
 		let mut h_to_add = String::from("h");			//Initialize the name of the new h-term
 		h_to_add.push_str((num_terms+1).to_string().as_str());
@@ -566,24 +630,32 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		
 		//Also add this new h to one of the c's
 		
-		let mut row: usize = rng.gen_range(1..6);		//Select a random c-term
-		let mut col: usize = rng.gen_range(1..6);
+		algo.num_h +=1;
 		
-		let mut c_to_add_to = String::from("c");		
-		c_to_add_to.push_str(row.to_string().as_str());
-		c_to_add_to.push_str(col.to_string().as_str());
+		if !algo.h_cap{
 		
-		let mut random: usize = rng.gen_range(0..2);
-		let mut new_h_name = String::from(" - "); 
+			let mut row: usize = rng.gen_range(1..6);		//Select a random c-term
+			let mut col: usize = rng.gen_range(1..6);
+			
+			let mut c_to_add_to = String::from("c");		
+			c_to_add_to.push_str(row.to_string().as_str());
+			c_to_add_to.push_str(col.to_string().as_str());
+			
+			let mut random: usize = rng.gen_range(0..2);
+			let mut new_h_name = String::from(" - "); 
+			
+			keys.push(c_to_add_to.clone());				//Add the c-term to the list of terms to be evaluated and updated in the int_maps
+			
+			if random == 0{ new_h_name.push_str(h_to_add.as_str()); h_to_add = new_h_name.clone();}	//Decide whether the term will be negative in the c-term's equation
+			
+			if verbose{
+				println!("Adding {}", h_to_add);
+			}
+			
+			algo.c_term_lists.get_mut(&c_to_add_to).map(|val| val.push(h_to_add));	//Add the new h-term to the selected c-term's list
+			algo.mult_algo.insert(c_to_add_to.clone(), make_c(&algo.c_term_lists[&c_to_add_to])); //Update the selected c-term's equation
 		
-		keys.push(c_to_add_to.clone());				//Add the c-term to the list of terms to be evaluated and updated in the int_maps
-		
-		if random == 0{ new_h_name.push_str(h_to_add.as_str()); h_to_add = new_h_name.clone();}	//Decide whether the term will be negative in the c-term's equation
-		
-		//println!("Adding {}", h_to_add);
-		
-		algo.c_term_lists.get_mut(&c_to_add_to).map(|val| val.push(h_to_add));	//Add the new h-term to the selected c-term's list
-		algo.mult_algo.insert(c_to_add_to.clone(), make_c(&algo.c_term_lists[&c_to_add_to])); //Update the selected c-term's equation
+		}
 		
 		num_terms += 1;
 		
@@ -633,7 +705,9 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 			h_to_remove = h_keys[term_index].to_string();
 		}		
 		
-		//println!("Attempting to remove {}", h_to_remove);
+		if verbose{
+			println!("Removing {}", h_to_remove);
+		}
 		
 		for x in 0..num_triples{
 			algo.int_maps[x].remove(&h_to_remove);
@@ -641,6 +715,8 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		
 		algo.mult_algo.remove(&h_to_remove);
 		algo.h_term_lists.remove(&h_to_remove);
+		
+		algo.num_h -=1;
 		
 		if algo.solo_h_list_a.contains(&h_to_remove){
 			let mut index = algo.solo_h_list_a.iter().position(|x| *x == h_to_remove).unwrap();
@@ -717,7 +793,9 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 			h_to_add_to.push_str(h_no.to_string().as_str());
 		}
 		
-		//println!("ADDING {} TO: {}", a_to_add, h_to_add_to);
+		if verbose{
+			println!("ADDING {} TO: {}", a_to_add, h_to_add_to);
+		}
 		
 		keys.push(h_to_add_to.clone());
 		
@@ -756,7 +834,10 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 			h_to_add_to.push_str(h_no.to_string().as_str());
 		}
 		
-		//println!("ADDING {} TO: {}", b_to_add, h_to_add_to);
+		if verbose{
+			println!("ADDING {} TO: {}", b_to_add, h_to_add_to);
+		}
+		
 		keys.push(h_to_add_to.clone());
 		
 		algo.h_term_lists.get_mut(&h_to_add_to).map(|val| val.push(b_to_add));
@@ -801,7 +882,6 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 				
 				if algo.solo_h_list_a.len() == algo.h_term_lists.keys().len(){
 					no_mutate = true;
-					println!("No mutate2");
 					return (algo, num_terms, mutation_type, no_mutate, keys)
 				}
 			}
@@ -821,7 +901,9 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		let mut picked_term_i = rng.gen_range(0..a_terms.len());
 		let mut picked_term = String::from(a_terms[picked_term_i]);
 		
-		//println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
+		if verbose{
+			println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
+		}
 		
 		let mut index = algo.h_term_lists[&h_to_remove_from].iter().position(|x| *x == picked_term).unwrap();
 		algo.h_term_lists.get_mut(&h_to_remove_from).map(|val| val.remove(index));
@@ -862,7 +944,6 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 				
 				if algo.solo_h_list_b.len() == algo.h_term_lists.keys().len(){
 					no_mutate = true;
-					println!("No mutate3");
 					return (algo, num_terms, mutation_type, no_mutate, keys)
 				}
 			}
@@ -882,7 +963,9 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		let mut picked_term_i = rng.gen_range(0..b_terms.len());
 		let mut picked_term = String::from(b_terms[picked_term_i]);
 		
-		//println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
+		if verbose{
+			println!("REMOVING {} FROM {}", picked_term, h_to_remove_from);
+		}
 		
 		let mut index = algo.h_term_lists[&h_to_remove_from].iter().position(|x| *x == picked_term).unwrap();
 		algo.h_term_lists.get_mut(&h_to_remove_from).map(|val| val.remove(index));
@@ -919,7 +1002,9 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		
 		keys.push(c_to_add_to.clone());
 		
-		//println!("Adding {} to {}", h_to_add, c_to_add_to);
+		if verbose{
+			println!("Adding {} to {}", h_to_add, c_to_add_to);
+		}
 		
 		algo.c_term_lists.get_mut(&c_to_add_to).map(|val| val.push(h_to_add));
 		algo.mult_algo.insert(c_to_add_to.clone(), make_c(&algo.c_term_lists[&c_to_add_to]));
@@ -946,7 +1031,6 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		
 		if algo.solo_c_list.len() == algo.c_term_lists.keys().len(){
 			no_mutate = true;
-			println!("No mutate4");
 			return (algo, num_terms, mutation_type, no_mutate, keys)
 		}
 	
@@ -957,7 +1041,9 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 	let mut picked_term_i = rng.gen_range(0..algo.c_term_lists[&c_to_remove_from].len());
 	let mut picked_term = &algo.c_term_lists[&c_to_remove_from][picked_term_i];
 	
-	//println!("Removing {} from {}", picked_term, c_to_remove_from);
+	if verbose{
+		println!("Removing {} from {}", picked_term, c_to_remove_from);
+	}
 	
 	let mut index = algo.c_term_lists[&c_to_remove_from].iter().position(|x| x == picked_term).unwrap();
 	algo.c_term_lists.get_mut(&c_to_remove_from).map(|val| val.remove(index));
@@ -973,12 +1059,13 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 fn main() {
 	let args: Vec<String> = env::args().collect();
 	
-	if args.len() < 2 {
+	if args.len() < 3 {
 		println!("Not enough arguments given, please try again.");
 		exit(0x0100);
 	}
 	
 	let num_triples = &args[1];
+	let num_generations = &args[2];
 
 	let mut Matmult = MatMult {
 		mat_triples: [].to_vec(),
@@ -991,53 +1078,84 @@ fn main() {
 		num_terms: 0, //Init to start_terms
 		verbose: false,
 		cells_priority: false,
-		h_added: 0,		
+		h_added: 0,	
+		num_generations: 1000,	
 	};
 	
 	Matmult.start_terms = Matmult.mat_size.0 * Matmult.mat_size.0 * Matmult.mat_size.1; // Init start_terms
 	Matmult.num_terms = Matmult.start_terms; 					    // Init num_terms
 	Matmult.num_triples = num_triples.parse::<usize>().unwrap();						    // Init num_triples	
+	Matmult.num_generations = num_generations.parse::<usize>().unwrap();						    // Init num_triples	
 	
 	init_mats(&mut Matmult.mat_triples, Matmult.num_triples, Matmult.mat_size);
 	let mut algo = rand_algo(Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size);
+	algo.num_h = Matmult.num_terms;
+	if args.contains(&"nocap".to_string()){
+		algo.h_cap = false;
+	} else {
+		algo.h_cap = true;
+	}
+	
 	let mut new_algo = algo.clone();
 	let mut fitness: (f64, f64) = (0.0,0.0);
 	init_maps(&mut algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
 	init_maps(&mut new_algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
 
-	fitness = get_fitness(&mut algo, &new_algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
+	fitness = get_fitness(&mut algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
 	let n = [].to_vec();
-	update_maps(&mut algo, &new_algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, n);
+	update_maps(&mut algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, n.clone());
+	//update_maps(&mut new_algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, n.clone());
 	
+	//print_int_maps(&algo, Matmult.num_terms, Matmult.mat_size);
 	//print_mats(&Matmult.mat_triples[0]);
 	//print_mat3_algo(&algo);
 	
-	for x in 0..10000{
+	
+	/*
+	for x in 0..Matmult.num_generations{
 
-		if x % 100 == 0 {println!("Mutation {}, fitness difference: {}, fitness_cells: {}", x, fitness.0, fitness.1); }
+		if x % 100 == 0 {println!("Generation {}, fitness difference: {}, fitness_cells: {}, num h: {}", x, fitness.0, fitness.1, algo.num_h); }
 		
-		let res = mutate(&mut algo, Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size, Matmult.num_triples);
+		let res = mutate(&mut new_algo, Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size, Matmult.num_triples, false);
 		Matmult.num_terms = res.1.clone();
 		let keys = res.4.clone();
 		
-		update_maps(&mut algo, &new_algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, keys);
+		update_maps(&mut new_algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, keys);
 
 		//thread::sleep_ms(1000);
 		
-		let new_fitness = get_fitness(&mut algo, &new_algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
+		let new_fitness = get_fitness(&mut new_algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
 		
-		if new_fitness.0 >= fitness.0{
+		if new_fitness.0 == 0.0{
+			println!("solved!");
+			break;
+		} else if new_fitness.0 < fitness.0{
+			println!("LESS, NEW FITNESS: {}", new_fitness.0);
 			algo = new_algo.clone();
-		} else {
-			//println!("new_fit: {}", new_fitness.0);
 			fitness = new_fitness
-		}
+		} else if new_fitness.0 == fitness.0{
+			//println!("SAME");
+			algo = new_algo.clone();
+			fitness = new_fitness
+		} else if new_fitness.0 > fitness.0{
+			//println!("MORE, FITNESS: {}", new_fitness.0);
+			new_algo = algo.clone();
+		}		
+		
+		//thread::sleep_ms(100);
 	}
 	
 	
 	print_algo(&algo, Matmult.num_terms, Matmult.mat_size);
-	//print_algo(&new_algo, Matmult.num_terms, Matmult.mat_size);
+	print_mats(&Matmult.mat_triples[0]);
 	
 	println!("fit_diff {}", fitness.0);
 	println!("fit_cells {}", fitness.1);
-} 
+	
+	*/
+	
+	let mut file = File::create("foo.txt");
+	std::fs::write("foo.txt", "nut");
+	std::fs::write("foo.txt", "nut");
+
+}
