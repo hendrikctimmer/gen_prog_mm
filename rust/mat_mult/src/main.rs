@@ -6,6 +6,7 @@
 extern crate rand;
 extern crate matrix;
 
+use std::fs::OpenOptions;
 use std::fs::File;
 use std::io::prelude::*;
 use rand::Rng;
@@ -32,6 +33,8 @@ struct Algorithm{
 	num_h: usize,
 	h_cap: bool,
 	max_h: usize,
+	pos: bool,
+	temp: f64,
 }
 
 struct MatMult{
@@ -47,6 +50,8 @@ struct MatMult{
 	cells_priority: bool,
 	h_added: u32,
 	num_generations: usize,
+	SA: bool,
+	num_mut: usize,
 }
 
 /*This method initializes the number of triples of matrices (A,B,C) specified, such that in each triple A * B = C.*/
@@ -326,6 +331,8 @@ fn rand_algo(term_size: u32, num_terms: usize, mat_size: (usize, usize)) -> Algo
 		num_h: 0,
 		h_cap: false,
 		max_h: 2*num_terms,
+		pos: false,
+		temp: 1.0,
 	};
 	
 	for x in 1..num_terms+1{
@@ -361,9 +368,11 @@ fn rand_algo(term_size: u32, num_terms: usize, mat_size: (usize, usize)) -> Algo
 }
 
 /*This method prints the current MM algorithm*/
-fn print_algo(algo: &Algorithm, num_terms: usize, mat_size: (usize, usize)){
+fn print_algo(algo: &Algorithm, num_terms: usize, mat_size: (usize, usize), mut write_file: File){
 
-	println!("NUMTERMS: {}", num_terms);
+	write_file.write("\n".as_bytes());
+	write_file.write("START ALGORITHM".as_bytes());
+	write_file.write("\n".as_bytes());
 
 	for x in 1..num_terms+1{
 	
@@ -371,6 +380,10 @@ fn print_algo(algo: &Algorithm, num_terms: usize, mat_size: (usize, usize)){
 		term_name.push_str(x.to_string().as_str());
 		if algo.mult_algo.contains_key(&term_name){
 			println!("{}: {}", term_name, algo.mult_algo[&term_name]);
+			write_file.write(term_name.to_string().as_bytes());
+			write_file.write(": ".as_bytes());
+			write_file.write(algo.mult_algo[&term_name].as_bytes());
+			write_file.write("\n".as_bytes());
 		}
 	}
 	
@@ -384,6 +397,10 @@ fn print_algo(algo: &Algorithm, num_terms: usize, mat_size: (usize, usize)){
 				term_name.push_str(y.to_string().as_str());
 				
 				println!("{}: {}", term_name, algo.mult_algo[&term_name]);
+				write_file.write(term_name.to_string().as_bytes());
+				write_file.write(": ".as_bytes());
+				write_file.write(algo.mult_algo[&term_name].as_bytes());
+				write_file.write("\n".as_bytes());
 		
 		}
 	}
@@ -1023,7 +1040,7 @@ fn mutate(mut algo: &mut Algorithm, term_size: u32, mut num_terms: usize, mat_si
 		c_to_remove_from.push_str(row.to_string().as_str());
 		c_to_remove_from.push_str(col.to_string().as_str());
 		
-		if algo.c_term_lists[&c_to_remove_from].len() > 1{
+		if algo.c_term_lists[&c_to_remove_from].len() > 2{
 			valid = true;
 		} else if !algo.solo_c_list.contains(&c_to_remove_from){
 			algo.solo_c_list.push(c_to_remove_from.clone());
@@ -1066,96 +1083,208 @@ fn main() {
 	
 	let num_triples = &args[1];
 	let num_generations = &args[2];
+	let num_runs = &args[3];
+	let SA_const = &args[4];
+	let num_mut = &args[5];
+	
+	for x in 0..num_runs.parse::<usize>().unwrap(){
+		let mut filename = String::from(num_triples.to_string().as_str());
+		filename.push_str("mat");
 
-	let mut Matmult = MatMult {
-		mat_triples: [].to_vec(),
-		mat_size: (5,5),
-		start_terms: 0, //Init to 125
-		num_triples: 5,
-		SMALL: 2,
-		MEDIUM: 5,
-		LARGE: 10,
-		num_terms: 0, //Init to start_terms
-		verbose: false,
-		cells_priority: false,
-		h_added: 0,	
-		num_generations: 1000,	
-	};
-	
-	Matmult.start_terms = Matmult.mat_size.0 * Matmult.mat_size.0 * Matmult.mat_size.1; // Init start_terms
-	Matmult.num_terms = Matmult.start_terms; 					    // Init num_terms
-	Matmult.num_triples = num_triples.parse::<usize>().unwrap();						    // Init num_triples	
-	Matmult.num_generations = num_generations.parse::<usize>().unwrap();						    // Init num_triples	
-	
-	init_mats(&mut Matmult.mat_triples, Matmult.num_triples, Matmult.mat_size);
-	let mut algo = rand_algo(Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size);
-	algo.num_h = Matmult.num_terms;
-	if args.contains(&"nocap".to_string()){
-		algo.h_cap = false;
-	} else {
-		algo.h_cap = true;
+		let mut Matmult = MatMult {
+			mat_triples: [].to_vec(),
+			mat_size: (5,5),
+			start_terms: 0, //Init to 125
+			num_triples: 5,
+			SMALL: 2,
+			MEDIUM: 5,
+			LARGE: 10,
+			num_terms: 0, //Init to start_terms
+			verbose: false,
+			cells_priority: false,
+			h_added: 0,	
+			num_generations: 1000,	
+			SA: false,
+			num_mut: 1,
+		};
+		
+		Matmult.start_terms = Matmult.mat_size.0 * Matmult.mat_size.0 * Matmult.mat_size.1; // Init start_terms
+		Matmult.num_terms = Matmult.start_terms; 					    // Init num_terms
+		Matmult.num_triples = num_triples.parse::<usize>().unwrap();						    // Init num_triples	
+		Matmult.num_generations = num_generations.parse::<usize>().unwrap();						    // Init num_triples
+		Matmult.num_mut = num_mut.parse::<usize>().unwrap();	
+		
+		init_mats(&mut Matmult.mat_triples, Matmult.num_triples, Matmult.mat_size);
+		let mut algo = rand_algo(Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size);
+		algo.num_h = Matmult.num_terms;
+		if args.contains(&"nocap".to_string()){
+			algo.h_cap = false;
+			filename.push_str("nocap");
+		} else {
+			algo.h_cap = true;
+			filename.push_str("cap");
+		}
+		
+		if args.contains(&"pos".to_string()){
+			algo.pos = true;
+			filename.push_str("pos");
+		} else {
+			algo.pos = false;
+			filename.push_str("nopos");
+		}
+		
+		filename.push_str(num_mut.to_string().as_str());
+		filename.push_str("mut");
+		
+		
+		if args.contains(&"SA".to_string()){
+			Matmult.SA = true;
+			filename.push_str("SA");
+			let mut SA_num = SA_const.parse::<f64>().unwrap();;
+			let mut SA_new: i32 = SA_num.log(10.0).round() as i32;
+			SA_new = (SA_new * -1) - 1; 
+			println!("LOOK HERE {}", SA_new);
+			filename.push_str(SA_new.to_string().as_str());
+			filename.push_str("-");
+		}
+		
+		let run_no = x+1;
+		filename.push_str(run_no.to_string().as_str());
+		
+		let mut new_algo = algo.clone();
+		let mut fitness: (f64, f64) = (0.0,0.0);
+		init_maps(&mut algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
+		init_maps(&mut new_algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
+
+		fitness = get_fitness(&mut algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
+		let n = [].to_vec();
+		update_maps(&mut algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, n.clone());
+		//update_maps(&mut new_algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, n.clone());
+		
+		//print_int_maps(&algo, Matmult.num_terms, Matmult.mat_size);
+		//print_mats(&Matmult.mat_triples[0]);
+		//print_mat3_algo(&algo);
+		
+		let mut file = File::create(filename.clone());
+		
+		let mut data_file = OpenOptions::new()
+		.append(true)
+		.open(filename)
+		.expect("cannot open file");
+		
+		for x in 0..Matmult.num_generations{
+
+			let current_gen: f64 = x as f64;
+			let max_gen: f64 = Matmult.num_generations as f64;
+			let constant: f64 = SA_const.parse::<f64>().unwrap();;
+			let power: f64 = (current_gen/max_gen);
+			algo.temp = constant.powf(power);
+
+			if x % 100 == 0 || current_gen == max_gen-1.0{
+				println!("Gen {}, const {}, power {}, temp {}", x, constant, power, algo.temp);
+				println!("Generation {}, fitness difference: {}, fitness_cells: {}, num h: {}, temp: {}", x, fitness.0, fitness.1, algo.num_h, algo.temp); 
+				data_file.write(x.to_string().as_bytes());
+				data_file.write(",".as_bytes());
+				data_file.write(fitness.0.to_string().as_bytes());
+				data_file.write(",".as_bytes());
+				data_file.write(fitness.1.to_string().as_bytes());
+				data_file.write("\n".as_bytes());
+			}
+			
+			for x in 0..Matmult.num_mut{
+			
+				let res = mutate(&mut new_algo, Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size, Matmult.num_triples, false);
+				Matmult.num_terms = res.1.clone();
+				let keys = res.4.clone();
+				
+				update_maps(&mut new_algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, keys);
+
+				//thread::sleep_ms(1000);
+			}
+			
+			let new_fitness = get_fitness(&mut new_algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
+			
+			
+			if !Matmult.SA{
+				if new_fitness.0 == 0.0{
+					println!("solved!");
+					data_file.write("solved! \n".as_bytes());
+					fitness = new_fitness;
+					break;
+				} else if new_fitness.0 < fitness.0{
+					//println!("LESS, NEW FITNESS: {}", new_fitness.0);
+					algo = new_algo.clone();
+					fitness = new_fitness
+				} else if new_fitness.0 == fitness.0{
+					//println!("SAME");
+					if !algo.pos{
+						algo = new_algo.clone();
+						fitness = new_fitness
+					} else {
+						new_algo = algo.clone();
+					}
+				} else if new_fitness.0 > fitness.0{
+					//println!("MORE, FITNESS: {}", new_fitness.0);
+					new_algo = algo.clone();
+				}		
+			} else if Matmult.SA {
+				if new_fitness.0 == 0.0{
+					println!("solved!");
+					data_file.write("solved! \n".as_bytes());
+					fitness = new_fitness;
+					break;
+				} else if new_fitness.0 < fitness.0{
+					//println!("LESS, NEW FITNESS: {}", new_fitness.0);
+					algo = new_algo.clone();
+					fitness = new_fitness
+				} else if new_fitness.0 == fitness.0{
+					//println!("SAME");
+					if !algo.pos{
+						algo = new_algo.clone();
+						fitness = new_fitness
+					}
+				} else if new_fitness.0 > fitness.0{
+					//println!("MORE, FITNESS: {}", new_fitness.0);
+					let mut rng = rand::thread_rng();
+					let randfloat = rng.gen_range(0.0..1.0);
+					if randfloat < algo.temp {
+						algo = new_algo.clone();
+						fitness = new_fitness
+					}
+					new_algo = algo.clone();
+				}	
+			}
+		}
+		
+		
+		print_algo(&algo, Matmult.num_terms, Matmult.mat_size, data_file);
+		//print_mats(&Matmult.mat_triples[0]);
+		
+		println!("fit_diff {}", fitness.0);
+		println!("fit_cells {}", fitness.1);
 	}
 	
-	let mut new_algo = algo.clone();
-	let mut fitness: (f64, f64) = (0.0,0.0);
-	init_maps(&mut algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
-	init_maps(&mut new_algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
-
-	fitness = get_fitness(&mut algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
-	let n = [].to_vec();
-	update_maps(&mut algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, n.clone());
-	//update_maps(&mut new_algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, n.clone());
+	let mut rng = rand::thread_rng();
 	
-	//print_int_maps(&algo, Matmult.num_terms, Matmult.mat_size);
-	//print_mats(&Matmult.mat_triples[0]);
-	//print_mat3_algo(&algo);
+	let num: f64 = 0.01;
+	let res: f64 = num.log(10.0).round();
 	
-	
+	println!("divided: {}", res);
 	/*
-	for x in 0..Matmult.num_generations{
+	
+	let mut file = File::create("data.txt");
+	
+	let mut data_file = OpenOptions::new()
+        .append(true)
+        .open("data.txt")
+        .expect("cannot open file");
 
-		if x % 100 == 0 {println!("Generation {}, fitness difference: {}, fitness_cells: {}, num h: {}", x, fitness.0, fitness.1, algo.num_h); }
-		
-		let res = mutate(&mut new_algo, Matmult.MEDIUM, Matmult.num_terms, Matmult.mat_size, Matmult.num_triples, false);
-		Matmult.num_terms = res.1.clone();
-		let keys = res.4.clone();
-		
-		update_maps(&mut new_algo, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size, keys);
-
-		//thread::sleep_ms(1000);
-		
-		let new_fitness = get_fitness(&mut new_algo, &Matmult, &Matmult.mat_triples, Matmult.num_terms, Matmult.MEDIUM, Matmult.mat_size);
-		
-		if new_fitness.0 == 0.0{
-			println!("solved!");
-			break;
-		} else if new_fitness.0 < fitness.0{
-			println!("LESS, NEW FITNESS: {}", new_fitness.0);
-			algo = new_algo.clone();
-			fitness = new_fitness
-		} else if new_fitness.0 == fitness.0{
-			//println!("SAME");
-			algo = new_algo.clone();
-			fitness = new_fitness
-		} else if new_fitness.0 > fitness.0{
-			//println!("MORE, FITNESS: {}", new_fitness.0);
-			new_algo = algo.clone();
-		}		
-		
-		//thread::sleep_ms(100);
+    	// Write to a file
+    	for x in 0..6{
+	    	data_file
+		.write("I am learning Rust!".as_bytes())
+		.expect("write failed");
 	}
-	
-	
-	print_algo(&algo, Matmult.num_terms, Matmult.mat_size);
-	print_mats(&Matmult.mat_triples[0]);
-	
-	println!("fit_diff {}", fitness.0);
-	println!("fit_cells {}", fitness.1);
-	
+    
 	*/
-	
-	let mut file = File::create("foo.txt");
-	std::fs::write("foo.txt", "nut");
-	std::fs::write("foo.txt", "nut");
-
 }

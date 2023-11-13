@@ -1,0 +1,6 @@
+#!/bin/bash
+#SBATCH -N 1
+#SBATCH -t 24:00:00
+echo start of job
+./mat_mult 25 1000000 10 1e-07 nocap pos SA
+echo end of job

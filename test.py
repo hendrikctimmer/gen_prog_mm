@@ -1,11 +1,6 @@
-import time
+import statistics
 
-time_0 = time.time()
+l1 = []
 
-num = 1
-
-for x in range(100000000):
-    num +=1
-
-print("time: ", time.time() - time_0)
-print(num)
+if not l1:
+	print("sack")

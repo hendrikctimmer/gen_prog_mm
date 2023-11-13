@@ -1,0 +1,199 @@
+Generation 0, fitness difference: 197.12, fitness cells: 25, num h: 125
+Generation 100, fitness difference: 135.2, fitness cells: 25, num h: 121
+Generation 200, fitness difference: 93.6, fitness cells: 25, num h: 117
+Generation 300, fitness difference: 74.04, fitness cells: 24, num h: 114
+Generation 400, fitness difference: 66, fitness cells: 24, num h: 115
+Generation 500, fitness difference: 64.04, fitness cells: 24, num h: 109
+Generation 600, fitness difference: 51.2, fitness cells: 24, num h: 109
+Generation 700, fitness difference: 43.88, fitness cells: 24, num h: 107
+Generation 800, fitness difference: 39.76, fitness cells: 24, num h: 105
+Generation 900, fitness difference: 31.92, fitness cells: 23, num h: 103
+Generation 1000, fitness difference: 27.8, fitness cells: 23, num h: 101
+Generation 1100, fitness difference: 21.92, fitness cells: 23, num h: 98
+Generation 1200, fitness difference: 21.88, fitness cells: 23, num h: 96
+Generation 1300, fitness difference: 21.28, fitness cells: 23, num h: 96
+Generation 1400, fitness difference: 20.8, fitness cells: 23, num h: 95
+Generation 1500, fitness difference: 20.8, fitness cells: 23, num h: 93
+Generation 1600, fitness difference: 14.2, fitness cells: 23, num h: 92
+Generation 1700, fitness difference: 11.2, fitness cells: 22, num h: 86
+Generation 1800, fitness difference: 11.08, fitness cells: 22, num h: 84
+Generation 1900, fitness difference: 7.32, fitness cells: 22, num h: 84
+Generation 2000, fitness difference: 7.28, fitness cells: 22, num h: 84
+Generation 2100, fitness difference: 6.6, fitness cells: 22, num h: 83
+Generation 2200, fitness difference: 6.48, fitness cells: 22, num h: 82
+Generation 2300, fitness difference: 5.92, fitness cells: 22, num h: 83
+Generation 2400, fitness difference: 4.32, fitness cells: 22, num h: 84
+Generation 2500, fitness difference: 4.28, fitness cells: 22, num h: 81
+Generation 2600, fitness difference: 4.28, fitness cells: 22, num h: 80
+Generation 2700, fitness difference: 4.28, fitness cells: 22, num h: 79
+Generation 2800, fitness difference: 4.28, fitness cells: 22, num h: 79
+Generation 2900, fitness difference: 4.04, fitness cells: 22, num h: 80
+Generation 3000, fitness difference: 4.04, fitness cells: 22, num h: 80
+Generation 3100, fitness difference: 4.04, fitness cells: 22, num h: 79
+Generation 3200, fitness difference: 3.92, fitness cells: 22, num h: 78
+Generation 3300, fitness difference: 3.84, fitness cells: 22, num h: 79
+Generation 3400, fitness difference: 3.72, fitness cells: 22, num h: 80
+Generation 3500, fitness difference: 3.72, fitness cells: 22, num h: 80
+Generation 3600, fitness difference: 3.72, fitness cells: 22, num h: 80
+Generation 3700, fitness difference: 3.72, fitness cells: 22, num h: 80
+Generation 3800, fitness difference: 3.72, fitness cells: 22, num h: 80
+Generation 3900, fitness difference: 3.72, fitness cells: 22, num h: 80
+Generation 4000, fitness difference: 3.72, fitness cells: 22, num h: 80
+Generation 4100, fitness difference: 3.4, fitness cells: 22, num h: 79
+Generation 4200, fitness difference: 3.4, fitness cells: 22, num h: 79
+Generation 4300, fitness difference: 2.32, fitness cells: 22, num h: 79
+Generation 4400, fitness difference: 2.32, fitness cells: 22, num h: 78
+Generation 4500, fitness difference: 2.32, fitness cells: 22, num h: 78
+Generation 4600, fitness difference: 2.32, fitness cells: 22, num h: 78
+Generation 4700, fitness difference: 2.32, fitness cells: 22, num h: 78
+Generation 4800, fitness difference: 2.32, fitness cells: 22, num h: 78
+Generation 4900, fitness difference: 2.32, fitness cells: 22, num h: 78
+Generation 5000, fitness difference: 2.32, fitness cells: 22, num h: 78
+Generation 5100, fitness difference: 2.32, fitness cells: 22, num h: 77
+Generation 5200, fitness difference: 2.32, fitness cells: 22, num h: 77
+Generation 5300, fitness difference: 2.12, fitness cells: 22, num h: 77
+Generation 5400, fitness difference: 2.12, fitness cells: 22, num h: 77
+Generation 5500, fitness difference: 2.12, fitness cells: 22, num h: 77
+Generation 5600, fitness difference: 2.12, fitness cells: 22, num h: 76
+Generation 5700, fitness difference: 2.12, fitness cells: 22, num h: 76
+Generation 5800, fitness difference: 2.12, fitness cells: 22, num h: 76
+Generation 5900, fitness difference: 2.12, fitness cells: 22, num h: 76
+Generation 6000, fitness difference: 1.96, fitness cells: 22, num h: 76
+Generation 6100, fitness difference: 1.96, fitness cells: 22, num h: 76
+Generation 6200, fitness difference: 1.96, fitness cells: 22, num h: 76
+Generation 6300, fitness difference: 1.8, fitness cells: 22, num h: 76
+Generation 6400, fitness difference: 1.72, fitness cells: 22, num h: 77
+Generation 6500, fitness difference: 1.72, fitness cells: 22, num h: 77
+Generation 6600, fitness difference: 1.72, fitness cells: 22, num h: 76
+Generation 6700, fitness difference: 1.72, fitness cells: 22, num h: 76
+Generation 6800, fitness difference: 1.72, fitness cells: 22, num h: 76
+Generation 6900, fitness difference: 1.72, fitness cells: 22, num h: 76
+Generation 7000, fitness difference: 1.6, fitness cells: 21, num h: 76
+Generation 7100, fitness difference: 1.6, fitness cells: 21, num h: 76
+Generation 7200, fitness difference: 1.6, fitness cells: 21, num h: 76
+Generation 7300, fitness difference: 1.6, fitness cells: 21, num h: 76
+Generation 7400, fitness difference: 1.6, fitness cells: 21, num h: 76
+Generation 7500, fitness difference: 1.6, fitness cells: 21, num h: 76
+Generation 7600, fitness difference: 1.6, fitness cells: 21, num h: 76
+Generation 7700, fitness difference: 1.52, fitness cells: 21, num h: 75
+Generation 7800, fitness difference: 1.52, fitness cells: 21, num h: 75
+Generation 7900, fitness difference: 1.52, fitness cells: 21, num h: 75
+Generation 8000, fitness difference: 1.52, fitness cells: 21, num h: 75
+Generation 8100, fitness difference: 1.44, fitness cells: 20, num h: 74
+Generation 8200, fitness difference: 1.4, fitness cells: 20, num h: 73
+Generation 8300, fitness difference: 1.4, fitness cells: 20, num h: 73
+Generation 8400, fitness difference: 1.4, fitness cells: 20, num h: 72
+Generation 8500, fitness difference: 1.4, fitness cells: 20, num h: 72
+Generation 8600, fitness difference: 1.4, fitness cells: 20, num h: 72
+Generation 8700, fitness difference: 1.4, fitness cells: 20, num h: 72
+Generation 8800, fitness difference: 1.4, fitness cells: 20, num h: 72
+Generation 8900, fitness difference: 1.32, fitness cells: 19, num h: 72
+Generation 9000, fitness difference: 1.32, fitness cells: 19, num h: 72
+Generation 9100, fitness difference: 1.32, fitness cells: 19, num h: 72
+Generation 9200, fitness difference: 1.32, fitness cells: 19, num h: 71
+Generation 9300, fitness difference: 1.32, fitness cells: 19, num h: 71
+Generation 9400, fitness difference: 1.32, fitness cells: 19, num h: 72
+Generation 9500, fitness difference: 1.32, fitness cells: 19, num h: 72
+Generation 9600, fitness difference: 1.32, fitness cells: 19, num h: 72
+Generation 9700, fitness difference: 1.32, fitness cells: 19, num h: 72
+Generation 9800, fitness difference: 1.32, fitness cells: 19, num h: 72
+Generation 9900, fitness difference: 1.32, fitness cells: 19, num h: 72
+
+START ALGORITHM
+h1: (a24 - a54) * (-b35)
+h3: (-a11) * (b42 + b55 - b45 - b22)
+h4: (a35) * (-b34)
+h5: (a45 + a45 - a41) * (-b42)
+h9: (a12 - a45) * (b51 + b14 + b35 - b32)
+h11: (-a35) * (b31)
+h14: (a34 + a22) * (b14)
+h15: (a44 + a43) * (b11 - b53)
+h16: (a53 + a24 - a24) * (b21 + b31 + b54 + b41 + b33 + b14 - b23 - b13 - b52 - b12 - b12 - b42)
+h20: (-a24) * (b12 + b22)
+h24: (a24) * (-b54)
+h31: (a12) * (b13 + b33 - b33)
+h32: (a12 + a12 - a54) * (-b15 - b53 - b35)
+h34: (-a34) * (-b51)
+h35: (a55) * (b11 + b53)
+h36: (a14) * (-b32)
+h38: (-a33) * (b25 + b53 + b23)
+h41: (a24) * (b32 - b35)
+h42: (a32) * (b14 - b54 - b45)
+h43: (a53) * (b55 + b33)
+h46: (a45 - a14) * (-b31)
+h47: (a44 - a31) * (b14 - b22 - b53)
+h54: (-a22 - a55) * (b41)
+h55: (a44 + a21 - a53) * (-b32)
+h61: (a41 + a25) * (-b55 - b21)
+h64: (-a54) * (-b12)
+h65: (-a23) * (b43 + b55 + b22 - b55 - b42)
+h68: (-a42) * (b25 - b42)
+h73: (a13 + a53 - a15) * (-b15)
+h74: (-a32) * (b33 - b42 - b13)
+h75: (-a21) * (-b35)
+h76: (a33 - a23) * (-b31 - b43)
+h77: (a35) * (-b34)
+h78: (-a31) * (-b52 - b13)
+h79: (-a54) * (b32)
+h85: (-a11) * (b53)
+h88: (-a32) * (-b51)
+h93: (a54 - a12) * (b53)
+h96: (a22 - a44) * (-b21)
+h98: (-a53) * (b23)
+h99: (a45) * (b52)
+h104: (a52) * (b14 + b41 + b14 + b32 - b52)
+h105: (a14 - a25) * (-b44)
+h106: (-a43 - a13) * (-b14 - b25 - b54)
+h107: (-a33) * (b21 + b25)
+h108: (-a22 - a13) * (-b53)
+h110: (a55 - a31) * (b51 + b23 - b45 - b34)
+h114: (a33 - a51 - a12 - a45) * (b31 - b44)
+h116: (a25 - a55 - a33) * (-b43)
+h118: (a11) * (-b25)
+h119: (-a53 - a12) * (b51 + b34 + b45 - b15 - b15)
+h122: (-a35 - a14) * (b22 - b34 - b12 - b24)
+h123: (-a32 - a42 - a13) * (-b24)
+h126: (a45 + a55 - a41 - a24) * (b32 + b31 - b11 - b35 - b43 - b54 - b23)
+h130: (-a54) * (b44 + b21 + b13)
+h133: (-a13) * (b44 - b32)
+h140: (a42 - a11 - a23 - a53 - a14) * (b44 + b31)
+h148: (a33) * (-b21)
+h150: (a11 + a55) * (-b41 - b22)
+h159: (-a33) * (-b35)
+h160: (a32) * (b52 - b43 - b54 - b54)
+h170: (a41) * (-b44)
+h198: (a32) * (-b55 - b55)
+h215: (-a24 - a14) * (-b55)
+h248: (-a22) * (-b25)
+h249: (-a23) * (b32 + b33)
+h286: (a15 + a41 + a12 + a21 - a14 - a53 - a11) * (b33 + b22 + b43 - b24 - b55)
+h334: (a41) * (-b32)
+h398: (a44) * (b34 + b42 + b41)
+h521: (-a15) * (b54 + b31 - b55 - b41)
+h527: (a21) * (b41 - b12)
+h1265: (-a31 - a32 - a34 - a31) * (-b15)
+c11: h79 + h110 + h521 + h119 - h96 
+c12: h35 + h5 - h3 - h68 - h55 
+c13: h38 + h108 + h521 - h34 
+c14: h68 + h47 + h118 - h35 
+c15: h73 + h106 + h41 + h42 + h61 - h43 - h398 
+c21: h160 + h215 
+c22: h11 + h85 + h16 + h107 + h31 + h123 
+c23: h61 + h96 
+c24: h46 + h96 - h123 
+c25: h93 + h36 
+c31: h105 + h74 + h42 + h32 + h160 - h88 - h249 
+c32: h32 + h150 
+c33: h43 + h88 + h114 + h118 + h527 + h78 + h1 - h4 
+c34: h9 + h75 - h122 
+c35: h64 + h64 - h4 - h42 - h170 
+c41: h1 + h32 - h78 - h85 
+c42: h43 + h126 + h140 + h9 
+c43: h98 + h68 + h248 + h116 + h334 - h133 
+c44: h65 + h65 + h79 - h75 - h286 
+c45: h15 + h106 + h126 - h119 - h108 - h148 
+c51: h104 + h76 - h74 - h85 
+c52: h24 + h130 - h54 - h99 - h31 - h159 
+c53: h14 + h73 + h116 + h20 + h1265 - h77 
+c54: - h198 
+c55: h38 + h77 - h5 - h11 
