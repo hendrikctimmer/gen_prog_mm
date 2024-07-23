@@ -1,6 +1,0 @@
-#!/bin/bash
-#SBATCH -N 1
-#SBATCH -t 120:00:00
-echo start of job
-./mat_mult_muts 15 1000000 10 0.1 5 nocap pos
-echo end of job
